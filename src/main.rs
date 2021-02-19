@@ -28,7 +28,7 @@ fn ray_color(ray: &Ray, world: &HittableList, depth: i32) -> Vec3 {
                 Some(new_ray) => {
                     let new_color = glm::matrix_comp_mult(
                         &(new_ray.attenuation),
-                        &ray_color(&new_ray, world, depth - 1),
+                        &ray_color(&new_ray, &world, depth - 1),
                     );
                     return new_color;
                 }
