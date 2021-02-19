@@ -87,6 +87,5 @@ fn main() {
         }
         vec3_to_rgb(pixel_color)
     });
-
     img.save("out.png").unwrap();
 }
