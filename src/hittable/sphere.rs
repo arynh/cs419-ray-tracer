@@ -33,26 +33,29 @@ impl Hittable for Sphere {
             let root = discriminant.sqrt();
             let mut x = (-half_b - root) / a;
             if x < max_distance && x > min_distance {
-                return Some(HitRecord {
+                Some(HitRecord {
                     hit_point: ray.at(x),
                     ray: *ray,
                     distance: x,
                     outward_normal: (ray.at(x) - self.center) / self.radius,
                     material: &(*self.material),
-                });
+                })
             } else {
                 x = (-half_b + root) / a;
                 if x < max_distance && x > min_distance {
-                    return Some(HitRecord {
+                    Some(HitRecord {
                         hit_point: ray.at(x),
                         ray: *ray,
                         distance: x,
                         outward_normal: (ray.at(x) - self.center) / self.radius,
                         material: &(*self.material),
-                    });
+                    })
+                } else {
+                    None
                 }
             }
+        } else {
+            None
         }
-        None
     }
 }

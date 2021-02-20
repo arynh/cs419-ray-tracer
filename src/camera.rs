@@ -1,3 +1,4 @@
+pub mod orthographic_camera;
 pub mod perspective_camera;
 
 use crate::ray::Ray;

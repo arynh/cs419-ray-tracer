@@ -17,12 +17,16 @@ impl Lambertian {
 }
 
 impl Material for Lambertian {
-    fn scatter(&self, incoming_ray: &Ray, hit_record: &HitRecord) -> Option<Ray> {
+    fn scatter(&self, _incoming_ray: &Ray, hit_record: &HitRecord) -> Option<Ray> {
         let scatter_direction = hit_record.normal() + Lambertian::random_direction();
         Some(Ray {
             origin: hit_record.hit_point,
             direction: scatter_direction,
             attenuation: self.albedo,
         })
+    }
+
+    fn color(&self) -> Vec3 {
+        self.albedo
     }
 }
