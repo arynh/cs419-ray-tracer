@@ -31,9 +31,9 @@ enum CameraProjection {
 
 // constants for image specifications
 // Change these to change the image!
-const IMAGE_WIDTH: u32 = 1920 / 2;
-const IMAGE_HEIGHT: u32 = 1080 / 2;
-const SAMPLES_LEVEL: usize = 4;
+const IMAGE_WIDTH: u32 = 1920;
+const IMAGE_HEIGHT: u32 = 1080;
+const SAMPLES_LEVEL: usize = 5;
 const EPSILON: f32 = 0.00001;
 const MAX_HIT_DISTANCE: f32 = f32::INFINITY;
 const AMBIENT_WEIGHT: f32 = 0.2;
