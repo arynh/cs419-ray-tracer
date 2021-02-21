@@ -41,54 +41,26 @@ const DIFFUSE_WEIGHT: f32 = 0.8;
 const CAMERA_TYPE: CameraProjection = CameraProjection::Perspective;
 
 fn main() {
-    // create world and populate it with objects
-    let mut world = HittableList::new();
-    world.add(Box::new(Sphere {
-        center: glm::vec3(0.2, 0.5, -1.0),
-        radius: 0.5,
-        material: Box::new(Lambertian {
-            albedo: glm::vec3(0.7, 0.3, 0.3),
-        }),
-    }));
-    world.add(Box::new(Sphere {
-        center: glm::vec3(0.0, -5.5, -3.0),
-        radius: 5.0,
-        material: Box::new(Lambertian {
-            albedo: glm::vec3(0.8, 0.8, 0.0),
-        }),
-    }));
-    world.add(Box::new(Triangle {
-        vertices: (
-            glm::vec3(0.5, -0.5, -1.0),
-            glm::vec3(-0.5, 1.0, -2.0),
-            glm::vec3(-1.5, -0.2, -1.0),
-        ),
-        material: Box::new(Lambertian {
-            albedo: glm::vec3(0.3, 0.2, 0.7),
-        }),
-    }));
-    world.add(Box::new(Plane {
-        center: glm::vec3(0.0, -1.0, 0.0),
-        normal: glm::vec3(0.0, 1.0, 0.0),
-        material: Box::new(Lambertian {
-            albedo: glm::vec3(0.0, 0.0, 1.0),
-        }),
-    }));
-
-    // create light source vector
-    let point_light1 = Light {
-        position: glm::vec3(1.0, 2.0, 1.0),
-        weight: 0.6,
-    };
-    let point_light2 = Light {
-        position: glm::vec3(-1.0, 2.0, 1.0),
-        weight: 0.5,
-    };
-    let lights = vec![point_light1, point_light2];
+    // configure camera position
+    let mut camera_origin: Vec3 = glm::vec3(0.0, 0.0, 0.0);
+    let mut camera_lookat: Vec3 = glm::vec3(0.0, 0.0, -1.0);
+    let camera_up: Vec3 = glm::vec3(0.0, 1.0, 1.0);
 
     // create a camera
-    let ortho = &OrthographicCamera::new_default_orthographic();
-    let perspective = &PerspectiveCamera::new_default_perspective();
+    let ortho = &OrthographicCamera::new(
+        camera_origin,
+        camera_lookat,
+        camera_up,
+        90.0,
+        IMAGE_WIDTH as f32 / IMAGE_HEIGHT as f32,
+    );
+    let mut perspective = &PerspectiveCamera::new(
+        camera_origin,
+        camera_lookat,
+        camera_up,
+        90.0,
+        IMAGE_WIDTH as f32 / IMAGE_HEIGHT as f32,
+    );
     let camera: &dyn Camera = match CAMERA_TYPE {
         CameraProjection::Orthographic => {
             drop(perspective);
@@ -99,6 +71,57 @@ fn main() {
             perspective
         }
     };
+
+    // configure object colors
+    let ground_plane_color = color(58, 222, 99);
+    let little_ball_color = color(194, 90, 250);
+    let ground_ball_color = color(242, 78, 190);
+    let triangle_color = color(242, 181, 75);
+
+    // create world and populate it with objects
+    let mut world = HittableList::new();
+    world.add(Box::new(Sphere {
+        center: glm::vec3(0.2, 0.4, -1.0),
+        radius: 0.4,
+        material: Box::new(Lambertian {
+            albedo: little_ball_color,
+        }),
+    }));
+    world.add(Box::new(Sphere {
+        center: glm::vec3(0.0, -5.5, -3.0),
+        radius: 5.0,
+        material: Box::new(Lambertian {
+            albedo: ground_ball_color,
+        }),
+    }));
+    world.add(Box::new(Triangle {
+        vertices: (
+            glm::vec3(0.5, -0.5, -1.0),
+            glm::vec3(-0.5, 1.0, -2.0),
+            glm::vec3(-1.5, -0.2, -1.0),
+        ),
+        material: Box::new(Lambertian {
+            albedo: triangle_color,
+        }),
+    }));
+    world.add(Box::new(Plane {
+        center: glm::vec3(0.0, -1.0, 0.0),
+        normal: glm::vec3(0.0, 1.0, 0.0),
+        material: Box::new(Lambertian {
+            albedo: ground_plane_color,
+        }),
+    }));
+
+    // create light source vector
+    let point_light1 = Light {
+        position: glm::vec3(1.0, 2.0, 1.0),
+        weight: 0.5,
+    };
+    let point_light2 = Light {
+        position: glm::vec3(-1.0, 2.0, 1.0),
+        weight: 0.4,
+    };
+    let lights = vec![point_light1, point_light2];
 
     let vec3_to_rgb = |vec: Vec3| {
         let scaled = vec / (SAMPLES_LEVEL * SAMPLES_LEVEL) as f32;
@@ -140,7 +163,11 @@ fn main() {
         *pixel = vec3_to_rgb(pixel_color);
     }
 
-    img.save("out.png").unwrap();
+    img.save(format!("out.png")).unwrap();
+}
+
+fn color(r: u8, g: u8, b: u8) -> Vec3 {
+    glm::vec3(r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0)
 }
 
 /// Shuffle the samples. Use multi-jittered
