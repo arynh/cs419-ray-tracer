@@ -144,26 +144,49 @@ fn main() {
         }
     }
 
-    let mut img = image::RgbImage::new(IMAGE_WIDTH, IMAGE_HEIGHT);
-    let image_width = IMAGE_WIDTH as f32 - 1.0;
-    let image_height = IMAGE_HEIGHT as f32 - 1.0;
-    for (x, y, pixel) in img.enumerate_pixels_mut() {
-        let mut pixel_color = glm::vec3(0.0, 0.0, 0.0);
-        let jitter_boxes = shuffle_jittered_sampling(&mut jitter_boxes);
-        let x_float = x as f32;
-        let y_float = image_height - y as f32;
-        for j in 0..SAMPLES_LEVEL {
-            for i in 0..SAMPLES_LEVEL {
-                let u = (x_float + jitter_boxes[j][i].0) / image_width;
-                let v = (y_float + jitter_boxes[j][i].1) / image_height;
-                let r = camera.get_ray(u, v);
-                pixel_color += ray_color(&r, &world, &lights);
-            }
-        }
-        *pixel = vec3_to_rgb(pixel_color);
-    }
+    let mut animated_camera = PerspectiveCamera::new(
+        camera_origin,
+        camera_lookat,
+        camera_up,
+        90.0,
+        IMAGE_WIDTH as f32 / IMAGE_HEIGHT as f32,
+    );
 
-    img.save(format!("out.png")).unwrap();
+    for frame in 0..(30 * 6) {
+        let theta = (2.0 * std::f32::consts::PI * frame as f32) / (30.0 * 6.0);
+        let new_position =
+            2.0 * glm::vec3(theta.sin(), 0.0, theta.cos()) + glm::vec3(0.0, 0.0, -1.0);
+
+        animated_camera.move_camera(
+            new_position,
+            camera_lookat,
+            new_position + camera_up,
+            90.0,
+            IMAGE_WIDTH as f32 / IMAGE_HEIGHT as f32,
+        );
+
+        let mut img = image::RgbImage::new(IMAGE_WIDTH, IMAGE_HEIGHT);
+        let image_width = IMAGE_WIDTH as f32 - 1.0;
+        let image_height = IMAGE_HEIGHT as f32 - 1.0;
+        for (x, y, pixel) in img.enumerate_pixels_mut() {
+            let mut pixel_color = glm::vec3(0.0, 0.0, 0.0);
+            let jitter_boxes = shuffle_jittered_sampling(&mut jitter_boxes);
+            let x_float = x as f32;
+            let y_float = image_height - y as f32;
+            for j in 0..SAMPLES_LEVEL {
+                for i in 0..SAMPLES_LEVEL {
+                    let u = (x_float + jitter_boxes[j][i].0) / image_width;
+                    let v = (y_float + jitter_boxes[j][i].1) / image_height;
+                    let r = animated_camera.get_ray(u, v);
+                    pixel_color += ray_color(&r, &world, &lights);
+                }
+            }
+            *pixel = vec3_to_rgb(pixel_color);
+        }
+
+        img.save(format!("frames/out-{:04}.png", frame)).unwrap();
+        println!("Done with frame {}!", frame);
+    }
 }
 
 fn color(r: u8, g: u8, b: u8) -> Vec3 {
