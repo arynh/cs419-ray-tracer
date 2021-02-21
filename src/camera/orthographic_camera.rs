@@ -33,7 +33,7 @@ impl OrthographicCamera {
             position
                 - viewport_width * horizontal_direction / 2.0
                 - viewport_height * vertical_direction / 2.0
-                - into_camera,
+                + into_camera,
         )
     }
 
