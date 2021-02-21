@@ -42,9 +42,9 @@ const CAMERA_TYPE: CameraProjection = CameraProjection::Perspective;
 
 fn main() {
     // configure camera position
-    let mut camera_origin: Vec3 = glm::vec3(0.0, 0.0, 0.0);
-    let mut camera_lookat: Vec3 = glm::vec3(0.0, 0.0, -1.0);
-    let camera_up: Vec3 = glm::vec3(0.0, 1.0, 1.0);
+    let camera_origin: Vec3 = glm::vec3(0.0, 0.0, 0.5);
+    let camera_lookat: Vec3 = glm::vec3(0.3, 0.0, -1.0);
+    let camera_up: Vec3 = glm::vec3(0.0, 1.0, 0.0);
 
     // create a camera
     let ortho = &OrthographicCamera::new(
@@ -54,7 +54,7 @@ fn main() {
         90.0,
         IMAGE_WIDTH as f32 / IMAGE_HEIGHT as f32,
     );
-    let mut perspective = &PerspectiveCamera::new(
+    let perspective = &PerspectiveCamera::new(
         camera_origin,
         camera_lookat,
         camera_up,
@@ -162,8 +162,7 @@ fn main() {
         }
         *pixel = vec3_to_rgb(pixel_color);
     }
-
-    img.save(format!("out.png")).unwrap();
+    img.save("out.png").unwrap();
 }
 
 fn color(r: u8, g: u8, b: u8) -> Vec3 {
