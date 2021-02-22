@@ -4,12 +4,17 @@ use crate::material::Material;
 use crate::ray::Ray;
 use glm::Vec3;
 
+/// Represent a plane in space
 pub struct Plane {
+    /// center point of the plane
     pub center: Vec3,
+    /// normal vector of the plane from the center point
     pub normal: Vec3,
+    /// material of the plane
     pub material: Box<dyn Material>,
 }
 
+/// Methods for the hittable trait
 impl Hittable for Plane {
     /// If a plane will be hit by a ray in a certain range, return a
     /// hit record with the intersection information. Otherwise, return `None`.

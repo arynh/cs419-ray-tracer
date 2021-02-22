@@ -7,12 +7,20 @@ use crate::hittable_list::HittableList;
 use crate::ray::Ray;
 use glm::Vec3;
 
+/// Represent a point light source
 pub struct Light {
+    /// position of the light source in world coordinates
     pub position: Vec3,
+    /// relative strength of the light source
     pub weight: f32,
 }
 
+/// Point light implementation
 impl Light {
+    /// Shade the given hit point according to the Blinn-Phong model, but with
+    /// no specular component of lighting. The global component is done by the
+    /// ray tracer, so this method just calculates the component of shading
+    /// from diffuse reflections.
     pub fn shade_diffuse(&self, hit: &HitRecord, world: &HittableList) -> Vec3 {
         // calculate ray from hit point to light source
         let point_to_light = Ray {

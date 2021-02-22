@@ -24,6 +24,7 @@ use rand::prelude::thread_rng as rng;
 use rand::Rng;
 use ray::Ray;
 
+// Camera projection types used for configuring which camera to use
 enum CameraProjection {
     Orthographic,
     Perspective,
@@ -33,7 +34,7 @@ enum CameraProjection {
 // Change these to change the image!
 const IMAGE_WIDTH: u32 = 1920;
 const IMAGE_HEIGHT: u32 = 1080;
-const SAMPLES_LEVEL: usize = 5;
+const SAMPLES_LEVEL: usize = 5; // SAMPLES_LEVEL^2 samples per pixel
 const EPSILON: f32 = 0.00001;
 const MAX_HIT_DISTANCE: f32 = f32::INFINITY;
 const AMBIENT_WEIGHT: f32 = 0.2;
@@ -123,6 +124,7 @@ fn main() {
     };
     let lights = vec![point_light1, point_light2];
 
+    // convert from vector to adjusted and clamped RBG values
     let vec3_to_rgb = |vec: Vec3| {
         let scaled = vec / (SAMPLES_LEVEL * SAMPLES_LEVEL) as f32;
         let clamped = glm::clamp(&scaled, 0.0, 1.0);
@@ -165,14 +167,45 @@ fn main() {
     img.save("out.png").unwrap();
 }
 
-fn color(r: u8, g: u8, b: u8) -> Vec3 {
-    glm::vec3(r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0)
+/// Given a ray from the camera, figure out what color that ray sees.
+///
+/// # Arguments
+/// - `ray: &Ray` - ray along which we are sampling the scene
+/// - `world: &HittableList` - objects that compose our scene
+/// - `lights: &Vec<Light>` - light sources for the scene
+///
+/// # Returns
+/// - `Vec3` - the color that this ray contributes to the pixel
+fn ray_color(ray: &Ray, world: &HittableList, lights: &Vec<Light>) -> Vec3 {
+    match world.hit(&ray, EPSILON, MAX_HIT_DISTANCE) {
+        // if we hit something, get that object's color, shade with blinn-phong
+        Some(hit) => {
+            let mut total = hit.material.color() * AMBIENT_WEIGHT;
+            for light in lights {
+                total += light.weight * light.shade_diffuse(&hit, &world);
+            }
+            total
+        }
+        // if we hit nothing, give the sky's color
+        None => {
+            let t = 0.5 * (glm::normalize(&ray.direction).y + 1.0);
+            glm::vec3(1.0, 1.0, 1.0) * (1.0 - t) + glm::vec3(0.5, 0.7, 1.0) * t
+        }
+    }
 }
 
-/// Shuffle the samples. Use multi-jittered
-/// sampling to acheive a good distribution.
-/// This method follows the presentation in:
+/// Shuffle the samples. Use multi-jittered sampling to acheive a good
+/// distribution. This method follows the presentation in:
 /// https://graphics.pixar.com/library/MultiJitteredSampling/paper.pdf
+///
+/// # Arguments
+/// - `jitter_boxes: &mut [[(f32, f32); SAMPLES_LEVEL]; SAMPLES_LEVEL]` - the
+///     array of sample locations arranged on the NxN grid. This is a mutable
+///     reference, so values are edited in place.
+///
+/// # Returns
+/// - `&[[(f32, f32); SAMPLES_LEVEL]; SAMPLES_LEVEL]` - the reference to the
+///     sample locations to return ownership to the main loop
 fn shuffle_jittered_sampling(
     jitter_boxes: &mut [[(f32, f32); SAMPLES_LEVEL]; SAMPLES_LEVEL],
 ) -> &[[(f32, f32); SAMPLES_LEVEL]; SAMPLES_LEVEL] {
@@ -197,20 +230,12 @@ fn shuffle_jittered_sampling(
     jitter_boxes
 }
 
-fn ray_color(ray: &Ray, world: &HittableList, lights: &Vec<Light>) -> Vec3 {
-    match world.hit(&ray, EPSILON, MAX_HIT_DISTANCE) {
-        // if we hit something, get that object's color, shade with blinn-phong
-        Some(hit) => {
-            let mut total = hit.material.color() * AMBIENT_WEIGHT;
-            for light in lights {
-                total += light.weight * light.shade_diffuse(&hit, &world);
-            }
-            total
-        }
-        // if we hit nothing, give the sky's color
-        None => {
-            let t = 0.5 * (glm::normalize(&ray.direction).y + 1.0);
-            glm::vec3(1.0, 1.0, 1.0) * (1.0 - t) + glm::vec3(0.5, 0.7, 1.0) * t
-        }
-    }
+/// Utility to convert from 8 bit RGB values to a Vec3
+///
+/// # Arguments
+/// - `r: u8` - red value
+/// - `g: u8` - green value
+/// - `b: u8` - blue value
+fn color(r: u8, g: u8, b: u8) -> Vec3 {
+    glm::vec3(r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0)
 }

@@ -4,12 +4,17 @@ use crate::material::Material;
 use crate::ray::Ray;
 use glm::Vec3;
 
+/// Represent a sphere in space
 pub struct Sphere {
+    /// center point of the sphere
     pub center: Vec3,
+    /// radius of the sphere
     pub radius: f32,
+    /// material to use for the sphere
     pub material: Box<dyn Material>,
 }
 
+/// Methods from the hittable trait
 impl Hittable for Sphere {
     /// If an object will be hit by a ray in a certain range, return a
     /// hit record with the intersection information. Otherwise, return `None`.

@@ -2,14 +2,35 @@ use crate::camera::Camera;
 use crate::ray::Ray;
 use glm::Vec3;
 
+/// Camera using the perspective projection.
 pub struct PerspectiveCamera {
+    /// Camera center in world coordinates
     pub origin: Vec3,
+    /// Vector for the horizontal axis of the image plane
     pub horizontal: Vec3,
+    /// Vector for the vertical axis of the image plane
     pub vertical: Vec3,
+    /// Point at which the image plane starts
     pub lower_left_corner: Vec3,
 }
 
+/// Methods for the perspective camera
 impl PerspectiveCamera {
+    /// Calculate the new camera parameters for the given configuration
+    ///
+    /// # Arguments
+    /// - `position: Vec3` - new position of the camera
+    /// - `lookat: Vec3` - new look-at point for the camera
+    /// - `up_direction: Vec3` - new up direction
+    /// - `vertical_fov: f32` - new vertical field of view in degrees
+    /// - `aspect_ratio: f32` - new aspect ratio
+    ///
+    /// # Returns
+    /// - tuple of
+    ///     - `Vec3` - new position of the camera
+    ///     - `Vec3` - new horizontal vector
+    ///     - `Vec3` - new vertical vector
+    ///     - `Vec3` - new lower left corner of the image plane
     fn calculate_camera_parameters(
         position: Vec3,
         lookat: Vec3,
@@ -36,6 +57,17 @@ impl PerspectiveCamera {
         )
     }
 
+    /// Create a new camera struct from the given parameters.
+    ///
+    /// # Arguments
+    /// - `position: Vec3` - position of the camera
+    /// - `lookat: Vec3` - look-at point for the camera
+    /// - `up_direction: Vec3` - up direction
+    /// - `vertical_fov: f32` - vertical field of view in degrees
+    /// - `aspect_ratio: f32` - aspect ratio
+    ///
+    /// # Returns
+    /// - new `crate::camera::perspective_camera::PerspectiveCamera` struct
     pub fn new(
         position: Vec3,
         lookat: Vec3,
@@ -61,7 +93,17 @@ impl PerspectiveCamera {
     }
 }
 
+/// Methods for the camera trait
 impl Camera for PerspectiveCamera {
+    /// Get a ray to be traced from the scene to the camera.
+    ///
+    /// # Arguments
+    /// - self reference
+    /// - `u: f32` - horizontal parameter, from 0 to 1, on the image plane
+    /// - `v: f32` - vertical parameter, from 0 to 1, on the image plane
+    ///
+    /// # Returns
+    /// - the new ray to be traced
     fn get_ray(&self, u: f32, v: f32) -> Ray {
         Ray {
             origin: self.origin,
@@ -71,6 +113,19 @@ impl Camera for PerspectiveCamera {
         }
     }
 
+    /// Move the camera to a new location and change the fov or aspect ratio of
+    /// the camera.
+    ///
+    /// # Arguments
+    /// - *mutable* self reference
+    /// - `position: Vec3` - new position of the camera
+    /// - `lookat: Vec3` - new look-at point for the camera
+    /// - `up_direction: Vec3` - new up direction
+    /// - `vertical_fov: f32` - new vertical field of view in degrees
+    /// - `aspect_ratio: f32` - new aspect ratio
+    ///
+    /// # Returns
+    /// Nothing. The camera struct is modified.
     fn move_camera(
         &mut self,
         position: Vec3,

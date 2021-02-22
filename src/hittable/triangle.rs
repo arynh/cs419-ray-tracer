@@ -4,16 +4,22 @@ use crate::material::Material;
 use crate::ray::Ray;
 use glm::Vec3;
 
+/// Represent a triangle in space
 pub struct Triangle {
+    /// Vertices of the triangle
     pub vertices: (Vec3, Vec3, Vec3),
+    /// Material of the triangle
     pub material: Box<dyn Material>,
 }
 
+/// Methods from the hittable trait
 impl Hittable for Triangle {
     /// If a triangle will be hit by a ray in a certain range, return a
     /// hit record with the intersection information. Otherwise, return `None`.
     /// This code uses the Möller–Trumbore intersection algorithm, with code
     /// based on the wikipedia page's implementation.
+    ///
+    /// See `README.md` for the reference to Möller-Trumbore.
     ///
     /// # Arguments
     /// - `ray` the ray to search for intersections along
