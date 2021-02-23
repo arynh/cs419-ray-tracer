@@ -1,6 +1,7 @@
 # Ray Tracer for CS 419
 
 ![Animated Sample](assets/animation.gif)
+![Animated Sample](assets/animation2.gif)
 
 ## Project
 
@@ -18,13 +19,13 @@ There is slight distortion due to the perspective, but we get a sense of a physi
 
 We can also see here that this ray tracer allows for any number of light sources (only two shown), and shading and shadows interact as expected.
 
-![Perspective Sample](assets/perspective_sample.png)
+![Perspective Sample](assets/perspective_camera.png)
 
 ### Orthographic Camera
 
 Both spheres appear perfectly circular, and the ground plane is invisible, as it is parallel to the camera's view direction.
 
-![Orthographic Sample](assets/orthographic_sample.png)
+![Orthographic Sample](assets/orthographic_camera.png)
 
 ## References
 

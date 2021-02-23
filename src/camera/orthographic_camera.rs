@@ -13,7 +13,7 @@ pub struct OrthographicCamera {
     /// Point at which the image plane starts
     pub lower_left_corner: Vec3,
     /// Private field to keep track of which direction the orthographic rays point
-    look_at: Vec3,
+    orthogonal_direction: Vec3,
 }
 
 /// Methods for the orthographic camera
@@ -54,8 +54,7 @@ impl OrthographicCamera {
             viewport_height * vertical_direction,
             position
                 - viewport_width * horizontal_direction / 2.0
-                - viewport_height * vertical_direction / 2.0
-                + into_camera,
+                - viewport_height * vertical_direction / 2.0,
         )
     }
 
@@ -91,7 +90,7 @@ impl OrthographicCamera {
             horizontal: horizontal,
             vertical: vertical,
             lower_left_corner: lower_left_corner,
-            look_at: lookat,
+            orthogonal_direction: lookat - origin,
         }
     }
 }
@@ -109,8 +108,8 @@ impl Camera for OrthographicCamera {
     /// - the new ray to be traced
     fn get_ray(&self, u: f32, v: f32) -> Ray {
         Ray {
-            origin: self.lower_left_corner + u * self.horizontal + v * self.vertical - self.origin,
-            direction: self.look_at,
+            origin: self.lower_left_corner + u * self.horizontal + v * self.vertical,
+            direction: self.orthogonal_direction,
             attenuation: glm::vec3(0.0, 0.0, 0.0),
         }
     }
@@ -145,5 +144,6 @@ impl Camera for OrthographicCamera {
         self.horizontal = horizontal;
         self.vertical = vertical;
         self.lower_left_corner = lower_left_corner;
+        self.orthogonal_direction = lookat - origin;
     }
 }
