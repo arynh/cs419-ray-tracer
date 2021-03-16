@@ -1,4 +1,5 @@
 use crate::hit_record::HitRecord;
+use crate::hittable::aabb::AABB;
 use crate::hittable::Hittable;
 use crate::material::Material;
 use crate::ray::Ray;
@@ -36,7 +37,7 @@ impl Hittable for Plane {
                     ray: *ray,
                     distance: t,
                     outward_normal: self.normal,
-                    material: &(*self.material),
+                    material: Some(&(*self.material)),
                 })
             } else {
                 None
@@ -44,5 +45,10 @@ impl Hittable for Plane {
         } else {
             None
         }
+    }
+
+    /// A plane is infinite, so it has no bounding box.
+    fn bounding_box(&self) -> Option<AABB> {
+        None
     }
 }

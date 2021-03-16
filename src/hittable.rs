@@ -1,8 +1,12 @@
+pub mod aabb;
+pub mod bvh;
+pub mod mesh;
 pub mod plane;
 pub mod sphere;
 pub mod triangle;
 
 use crate::hit_record::HitRecord;
+use crate::hittable::aabb::AABB;
 use crate::ray::Ray;
 
 /// A trait of objects that are "hittable," meaning that rays cast through
@@ -19,4 +23,14 @@ pub trait Hittable {
     /// # Returns
     /// - Optional `HitRecord` if there was a hit, otherwise `None`.
     fn hit(&self, ray: &Ray, min_distance: f32, max_distance: f32) -> Option<HitRecord>;
+
+    /// Finite objects fit into bounding boxes. If this is the case, they
+    /// can provide their bounding box.
+    ///
+    /// # Arguments
+    /// - just the self reference
+    ///
+    /// # Returns
+    /// - Optional 'AABB' which encloses the hittable.
+    fn bounding_box(&self) -> Option<AABB>;
 }

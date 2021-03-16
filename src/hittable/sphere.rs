@@ -1,4 +1,5 @@
 use crate::hit_record::HitRecord;
+use crate::hittable::aabb::AABB;
 use crate::hittable::Hittable;
 use crate::material::Material;
 use crate::ray::Ray;
@@ -43,7 +44,7 @@ impl Hittable for Sphere {
                     ray: *ray,
                     distance: x,
                     outward_normal: (ray.at(x) - self.center) / self.radius,
-                    material: &(*self.material),
+                    material: Some(&(*self.material)),
                 })
             } else {
                 x = (-half_b + root) / a;
@@ -53,7 +54,7 @@ impl Hittable for Sphere {
                         ray: *ray,
                         distance: x,
                         outward_normal: (ray.at(x) - self.center) / self.radius,
-                        material: &(*self.material),
+                        material: Some(&(*self.material)),
                     })
                 } else {
                     None
@@ -62,5 +63,13 @@ impl Hittable for Sphere {
         } else {
             None
         }
+    }
+
+    /// Calculate the bounding box for this sphere.
+    fn bounding_box(&self) -> Option<AABB> {
+        Some(AABB {
+            minimum_point: self.center - glm::vec3(self.radius, self.radius, self.radius),
+            maximum_point: self.center + glm::vec3(self.radius, self.radius, self.radius),
+        })
     }
 }

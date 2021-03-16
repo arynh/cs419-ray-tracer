@@ -13,7 +13,7 @@ pub struct HitRecord<'a> {
     /// Normal vector of the geometry hit by the ray
     pub outward_normal: Vec3,
     /// Material hit
-    pub material: &'a dyn Material,
+    pub material: Option<&'a dyn Material>,
 }
 
 impl<'a> HitRecord<'a> {

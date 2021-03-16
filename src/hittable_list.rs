@@ -1,11 +1,12 @@
 use crate::hit_record::HitRecord;
+use crate::hittable::aabb::AABB;
 use crate::hittable::Hittable;
 use crate::ray::Ray;
 
 /// Represent a list of hittable objects
 pub struct HittableList {
     /// Vector of hittables on the heap
-    objects: Vec<Box<dyn Hittable>>,
+    pub objects: Vec<Box<dyn Hittable>>,
 }
 
 /// Methods for hittable lists
@@ -29,6 +30,14 @@ impl HittableList {
     /// - `hittable: Box<dyn Hittable>` - new hittable to add to the collection
     pub fn add(&mut self, hittable: Box<dyn Hittable>) {
         self.objects.push(hittable);
+    }
+
+    /// Create a HittableList from a vector of boxed hittables.
+    ///
+    /// # Arguments
+    /// - vec, a vector of boxed hittables
+    pub fn from_vec(vec: Vec<Box<dyn Hittable>>) -> HittableList {
+        HittableList { objects: vec }
     }
 }
 
@@ -60,5 +69,36 @@ impl Hittable for HittableList {
             }
         }
         closest_hit
+    }
+
+    /// Find the box which bounds all objects in the hittable list.
+    fn bounding_box(&self) -> Option<AABB> {
+        if self.objects.is_empty() {
+            return None;
+        }
+
+        let mut output_box = if let Some(bbox) = self.objects[0].bounding_box() {
+            bbox
+        } else {
+            return None;
+        };
+
+        let mut expanding_box: AABB;
+        let mut first_box = true;
+
+        for object in self.objects.iter() {
+            if let Some(bbox) = object.bounding_box() {
+                expanding_box = bbox;
+                output_box = if first_box {
+                    expanding_box
+                } else {
+                    AABB::surrounding_box(output_box, expanding_box)
+                };
+                first_box = false;
+            } else {
+                return None;
+            }
+        }
+        Some(output_box)
     }
 }

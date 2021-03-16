@@ -1,4 +1,5 @@
 use crate::hit_record::HitRecord;
+use crate::hittable::aabb::AABB;
 use crate::hittable::Hittable;
 use crate::material::Material;
 use crate::ray::Ray;
@@ -7,7 +8,7 @@ use glm::Vec3;
 /// Represent a triangle in space
 pub struct Triangle {
     /// Vertices of the triangle
-    pub vertices: (Vec3, Vec3, Vec3),
+    pub vertices: [Vec3; 3],
     /// Material of the triangle
     pub material: Box<dyn Material>,
 }
@@ -29,15 +30,15 @@ impl Hittable for Triangle {
     /// # Returns
     /// - Optional `HitRecord` if there was a hit, otherwise `None`.
     fn hit(&self, ray: &Ray, min_distance: f32, max_distance: f32) -> Option<HitRecord> {
-        let edge_one = self.vertices.1 - self.vertices.0;
-        let edge_two = self.vertices.2 - self.vertices.0;
+        let edge_one = self.vertices[1] - self.vertices[0];
+        let edge_two = self.vertices[2] - self.vertices[0];
         let h = glm::cross(&ray.direction, &edge_two);
         let a = glm::dot(&edge_one, &h);
         if a > -min_distance && a < min_distance {
             None // This ray is parallel to this triangle.
         } else {
             let f = 1.0 / a;
-            let s = ray.origin - self.vertices.0;
+            let s = ray.origin - self.vertices[0];
             let u = f * glm::dot(&s, &h);
             if u < 0.0 || u > 1.0 {
                 None
@@ -56,7 +57,7 @@ impl Hittable for Triangle {
                             ray: *ray,
                             distance: t,
                             outward_normal: glm::cross(&edge_one, &edge_two),
-                            material: &(*self.material),
+                            material: Some(&(*self.material)),
                         })
                     } else {
                         None
@@ -64,5 +65,25 @@ impl Hittable for Triangle {
                 }
             }
         }
+    }
+
+    /// Compute the bounding box of this triangle.
+    fn bounding_box(&self) -> Option<AABB> {
+        let mut min_point = glm::vec3(f32::INFINITY, f32::INFINITY, f32::INFINITY);
+        let mut max_point = glm::vec3(f32::NEG_INFINITY, f32::NEG_INFINITY, f32::NEG_INFINITY);
+        for dimension in 0..3 {
+            for point in self.vertices.iter() {
+                if point[dimension] < min_point[dimension] {
+                    min_point[dimension] = point[dimension];
+                }
+                if point[dimension] > max_point[dimension] {
+                    max_point[dimension] = point[dimension];
+                }
+            }
+        }
+        Some(AABB {
+            minimum_point: min_point,
+            maximum_point: max_point,
+        })
     }
 }
