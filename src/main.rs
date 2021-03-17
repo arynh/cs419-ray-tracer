@@ -81,7 +81,7 @@ fn main() {
     let y_extent = 50.0;
     let z_close = -125.0;
     let z_far = z_close - 30.0;
-    let num_spheres = 10_000;
+    let num_spheres = 100_000;
     let mut world = HittableList::new();
     for _ in 0..num_spheres {
         world.add(Box::new(Sphere {
