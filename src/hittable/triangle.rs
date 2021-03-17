@@ -9,6 +9,8 @@ use glm::Vec3;
 pub struct Triangle {
     /// Vertices of the triangle
     pub vertices: [Vec3; 3],
+    /// Normals at each vertex
+    pub vertex_normals: [Vec3; 3],
     /// Material of the triangle
     pub material: Box<dyn Material>,
 }
@@ -56,7 +58,7 @@ impl Hittable for Triangle {
                             hit_point: ray.at(t),
                             ray: *ray,
                             distance: t,
-                            outward_normal: glm::cross(&edge_one, &edge_two),
+                            outward_normal: self.interpolate_normal(ray.at(t)),
                             material: Some(&(*self.material)),
                         })
                     } else {
@@ -85,5 +87,36 @@ impl Hittable for Triangle {
             minimum_point: min_point,
             maximum_point: max_point,
         })
+    }
+}
+
+impl Triangle {
+    /// Given a hit location, interpolate the vertex normals to get the normal
+    /// at the hit point.
+    ///
+    /// This method is modelled after this approach:
+    /// https://gamedev.stackexchange.com/a/23745
+    ///
+    /// # Arguments
+    /// - self reference
+    /// - `hit_location` - a `Vec3` representing a point on the triangle.
+    fn interpolate_normal(&self, hit_location: Vec3) -> Vec3 {
+        let edge_one = self.vertices[1] - self.vertices[0];
+        let edge_two = self.vertices[2] - self.vertices[0];
+        let point_to_hit = hit_location - self.vertices[0];
+
+        let d00 = glm::dot(&edge_one, &edge_one);
+        let d01 = glm::dot(&edge_one, &edge_two);
+        let d11 = glm::dot(&edge_two, &edge_two);
+        let d20 = glm::dot(&point_to_hit, &edge_one);
+        let d21 = glm::dot(&point_to_hit, &edge_two);
+        let denom = d00 * d11 - d01 * d01;
+        let v = (d11 * d20 - d01 * d21) / denom;
+        let w = (d00 * d21 - d01 * d20) / denom;
+        let u = 1.0 - v - w;
+
+        glm::normalize(
+            &(u * self.vertex_normals[0] + v * self.vertex_normals[1] + w * self.vertex_normals[2]),
+        )
     }
 }

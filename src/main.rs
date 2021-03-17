@@ -14,7 +14,9 @@ use camera::perspective_camera::PerspectiveCamera;
 use camera::Camera;
 use glm::Vec3;
 use hittable::bvh::BVH;
+use hittable::mesh::Mesh;
 use hittable::sphere::Sphere;
+use hittable::triangle::Triangle;
 use hittable::Hittable;
 use hittable_list::HittableList;
 use light::Light;
@@ -33,19 +35,19 @@ enum CameraProjection {
 // Change these to change the image!
 const IMAGE_WIDTH: u32 = 960;
 const IMAGE_HEIGHT: u32 = 540;
-const SAMPLES_LEVEL: usize = 2; // SAMPLES_LEVEL^2 samples per pixel
+const SAMPLES_LEVEL: usize = 1; // SAMPLES_LEVEL^2 samples per pixel
 const EPSILON: f32 = 0.00001;
 const MAX_HIT_DISTANCE: f32 = f32::INFINITY;
-const AMBIENT_WEIGHT: f32 = 0.1;
-const DIFFUSE_WEIGHT: f32 = 0.6;
-const SPECULAR_WEIGHT: f32 = 0.3;
+const AMBIENT_WEIGHT: f32 = 0.05;
+const DIFFUSE_WEIGHT: f32 = 1.0;
+const SPECULAR_WEIGHT: f32 = 0.4;
 const SPECULAR_COEFFICIENT: f32 = 120.0;
 const CAMERA_TYPE: CameraProjection = CameraProjection::Perspective;
 
 fn main() {
     // configure camera position
-    let camera_origin: Vec3 = glm::vec3(0.0, 0.0, 1.0);
-    let camera_lookat: Vec3 = glm::vec3(0.0, 0.0, 0.0);
+    let camera_origin: Vec3 = glm::vec3(10.0, 10.0, -10.0);
+    let camera_lookat: Vec3 = glm::vec3(0.0, 1.0, 0.0);
     let camera_up: Vec3 = glm::vec3(0.0, 1.0, 0.0);
 
     // create a camera
@@ -60,7 +62,7 @@ fn main() {
         camera_origin,
         camera_lookat,
         camera_up,
-        45.0,
+        20.0,
         IMAGE_WIDTH as f32 / IMAGE_HEIGHT as f32,
     );
     let camera: &dyn Camera = match CAMERA_TYPE {
@@ -74,36 +76,47 @@ fn main() {
         }
     };
 
-    // create world and populate it with objects
-    let x_extent = 90.0;
-    let y_extent = 50.0;
-    let z_close = -125.0;
-    let z_far = z_close - 30.0;
-    let num_spheres = 100;
-    let mut world = HittableList::new();
-    for _ in 0..num_spheres {
-        world.add(Box::new(Sphere {
-            center: glm::vec3(
-                2.0 * x_extent * rng().gen::<f32>() - x_extent,
-                2.0 * y_extent * rng().gen::<f32>() - y_extent,
-                (z_far - z_close) * rng().gen::<f32>() + z_close,
-            ),
-            radius: 5.0,
-            material: Box::new(Lambertian {
-                albedo: Vec3::new(rng().gen::<f32>(), rng().gen::<f32>(), rng().gen::<f32>()),
-            }),
-        }));
-    }
+    // import mesh
+    let mesh = Mesh::create("assets/teapot.obj", color(238, 228, 176), 20);
 
-    println!("building bvh . . .");
-    let bvh = BVH::build(world.objects, 10);
+    // // create world and populate it with objects
+    // let x_extent = 90.0;
+    // let y_extent = 50.0;
+    // let z_close = -125.0;
+    // let z_far = z_close - 30.0;
+    // let num_spheres = 100;
+    // let mut world = HittableList::new();
+    // for _ in 0..num_spheres {
+    //     world.add(Box::new(Sphere {
+    //         center: glm::vec3(
+    //             2.0 * x_extent * rng().gen::<f32>() - x_extent,
+    //             2.0 * y_extent * rng().gen::<f32>() - y_extent,
+    //             (z_far - z_close) * rng().gen::<f32>() + z_close,
+    //         ),
+    //         radius: 5.0,
+    //         material: Box::new(Lambertian {
+    //             albedo: Vec3::new(rng().gen::<f32>(), rng().gen::<f32>(), rng().gen::<f32>()),
+    //         }),
+    //     }));
+    // }
+
+    // println!("building bvh . . .");
+    // let bvh = BVH::build(world.objects, 10);
 
     // create light source vector
+    // let point_light1 = Light {
+    //     position: glm::vec3(50.0, 50.0, -75.0),
+    //     weight: 1.0,
+    // };
     let point_light1 = Light {
-        position: glm::vec3(50.0, 50.0, -75.0),
-        weight: 1.0,
+        position: glm::vec3(0.0, 0.0, -20.0),
+        weight: 0.8,
     };
-    let lights = vec![point_light1];
+    let point_light2 = Light {
+        position: glm::vec3(5.0, 20.0, 5.0),
+        weight: 0.4,
+    };
+    let lights = vec![point_light1, point_light2];
 
     // convert from vector to adjusted and clamped RBG values
     let vec3_to_rgb = |vec: Vec3| {
@@ -141,7 +154,7 @@ fn main() {
                 let u = (x_float + jitter_boxes[j][i].0) / image_width;
                 let v = (y_float + jitter_boxes[j][i].1) / image_height;
                 let r = camera.get_ray(u, v);
-                pixel_color += ray_color(&r, &bvh, &lights);
+                pixel_color += ray_color(&r, &mesh, &lights);
             }
         }
         *pixel = vec3_to_rgb(pixel_color);
@@ -162,11 +175,7 @@ fn ray_color(ray: &Ray, world: &dyn Hittable, lights: &Vec<Light>) -> Vec3 {
     match world.hit(&ray, EPSILON, MAX_HIT_DISTANCE) {
         // if we hit something, get that object's color, shade with blinn-phong
         Some(hit) => {
-            let color = if let Some(material) = hit.material {
-                material.color()
-            } else {
-                glm::vec3(0.0, 0.0, 0.0)
-            };
+            let color = hit.material.unwrap().color();
             let mut total = color * AMBIENT_WEIGHT;
             for light in lights {
                 total += light.weight * light.shade(&hit, world);
