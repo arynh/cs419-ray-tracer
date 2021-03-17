@@ -36,10 +36,12 @@ impl<'a> HitRecord<'a> {
     /// # Returns
     /// - the normal vector corrected for the position of the camera
     pub fn normal(&self) -> Vec3 {
-        if self.is_front_face() {
-            self.outward_normal
-        } else {
-            -self.outward_normal
-        }
+        glm::normalize(
+            &(if self.is_front_face() {
+                self.outward_normal
+            } else {
+                -self.outward_normal
+            }),
+        )
     }
 }

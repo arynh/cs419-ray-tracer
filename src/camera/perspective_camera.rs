@@ -1,3 +1,4 @@
+use super::super::EPSILON;
 use crate::camera::Camera;
 use crate::ray::Ray;
 use glm::Vec3;
@@ -107,8 +108,11 @@ impl Camera for PerspectiveCamera {
     fn get_ray(&self, u: f32, v: f32) -> Ray {
         Ray {
             origin: self.origin,
-            direction: self.lower_left_corner + u * self.horizontal + v * self.vertical
-                - self.origin,
+            direction: (1.0 + EPSILON)
+                * glm::normalize(
+                    &(self.lower_left_corner + u * self.horizontal + v * self.vertical
+                        - self.origin),
+                ),
             attenuation: glm::vec3(0.0, 0.0, 0.0),
         }
     }

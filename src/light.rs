@@ -24,9 +24,10 @@ impl Light {
     /// reflections.
     pub fn shade(&self, hit: &HitRecord, world: &dyn Hittable) -> Vec3 {
         // calculate ray from hit point to light source
+        let point_to_light_vector = self.position - hit.hit_point;
         let point_to_light = Ray {
             origin: hit.hit_point,
-            direction: self.position - hit.hit_point,
+            direction: glm::normalize(&point_to_light_vector),
             attenuation: glm::vec3(0.0, 0.0, 0.0),
         };
         // cast a new ray to the light to see if it hits anything
