@@ -1,6 +1,7 @@
 # Ray Tracer for CS 419
 
 ![Teapot](assets/teapot2.png)
+![Cow](assets/cow3.png)
 ![Animated Sample](assets/animation.gif)
 ![Animated Sample](assets/animation2.gif)
 
