@@ -62,7 +62,7 @@ impl BVH {
         let bounding_box = bounding_boxes
             .iter()
             .fold(bounding_boxes[0], |expanding, next| {
-                AABB::surrounding_box(expanding, *next)
+                AABB::surrounding_box(&expanding, &*next)
             });
 
         // find the axis with the greatest spread

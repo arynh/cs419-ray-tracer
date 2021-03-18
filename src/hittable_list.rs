@@ -7,6 +7,8 @@ use crate::ray::Ray;
 pub struct HittableList {
     /// Vector of hittables on the heap
     pub objects: Vec<Box<dyn Hittable>>,
+    // Cached bounding box
+    bounding_box: Option<AABB>,
 }
 
 /// Methods for hittable lists
@@ -21,6 +23,7 @@ impl HittableList {
     pub fn new() -> HittableList {
         HittableList {
             objects: Vec::new(),
+            bounding_box: None,
         }
     }
     /// Add a hittable object to the list
@@ -30,6 +33,16 @@ impl HittableList {
     /// - `hittable: Box<dyn Hittable>` - new hittable to add to the collection
     pub fn add(&mut self, hittable: Box<dyn Hittable>) {
         self.objects.push(hittable);
+        let last_box = (&self.objects.last().unwrap()).bounding_box();
+        self.bounding_box = if let Some(bbox) = self.bounding_box {
+            if let Some(new_box) = last_box {
+                Some(AABB::surrounding_box(&bbox, &new_box))
+            } else {
+                self.bounding_box
+            }
+        } else {
+            last_box
+        }
     }
 
     /// Create a HittableList from a vector of boxed hittables.
@@ -37,7 +50,11 @@ impl HittableList {
     /// # Arguments
     /// - vec, a vector of boxed hittables
     pub fn from_vec(vec: Vec<Box<dyn Hittable>>) -> HittableList {
-        HittableList { objects: vec }
+        let mut list = HittableList::new();
+        for object in vec.into_iter() {
+            list.add(object);
+        }
+        list
     }
 }
 
@@ -60,7 +77,7 @@ impl Hittable for HittableList {
         let mut current_min = std::f32::INFINITY;
         let mut closest_hit: Option<HitRecord> = None;
 
-        for object in &self.objects {
+        for object in self.objects.iter() {
             if let Some(hit) = object.hit(ray, min_distance, max_distance) {
                 if hit.distance < current_min {
                     current_min = hit.distance;
@@ -73,32 +90,6 @@ impl Hittable for HittableList {
 
     /// Find the box which bounds all objects in the hittable list.
     fn bounding_box(&self) -> Option<AABB> {
-        if self.objects.is_empty() {
-            return None;
-        }
-
-        let mut output_box = if let Some(bbox) = self.objects[0].bounding_box() {
-            bbox
-        } else {
-            return None;
-        };
-
-        let mut expanding_box: AABB;
-        let mut first_box = true;
-
-        for object in self.objects.iter() {
-            if let Some(bbox) = object.bounding_box() {
-                expanding_box = bbox;
-                output_box = if first_box {
-                    expanding_box
-                } else {
-                    AABB::surrounding_box(output_box, expanding_box)
-                };
-                first_box = false;
-            } else {
-                return None;
-            }
-        }
-        Some(output_box)
+        self.bounding_box
     }
 }

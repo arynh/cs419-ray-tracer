@@ -33,21 +33,21 @@ enum CameraProjection {
 
 // constants for image specifications
 // Change these to change the image!
-const IMAGE_WIDTH: u32 = 960;
+const IMAGE_WIDTH: u32 = 960; // 960 / 4;
 const IMAGE_HEIGHT: u32 = 540;
-const SAMPLES_LEVEL: usize = 1; // SAMPLES_LEVEL^2 samples per pixel
+const SAMPLES_LEVEL: usize = 2; // SAMPLES_LEVEL^2 samples per pixel
 const EPSILON: f32 = 0.0001;
 const MAX_HIT_DISTANCE: f32 = f32::INFINITY;
 const AMBIENT_WEIGHT: f32 = 0.05;
 const DIFFUSE_WEIGHT: f32 = 0.8;
-const SPECULAR_WEIGHT: f32 = 0.4;
+const SPECULAR_WEIGHT: f32 = 0.5;
 const SPECULAR_COEFFICIENT: f32 = 120.0;
 const CAMERA_TYPE: CameraProjection = CameraProjection::Perspective;
 
 fn main() {
     // configure camera position
-    let camera_origin: Vec3 = glm::vec3(0.0, 0.0, 1.0);
-    let camera_lookat: Vec3 = glm::vec3(0.0, 0.0, -1.0);
+    let camera_origin: Vec3 = glm::vec3(10.0, 10.0, -10.0);
+    let camera_lookat: Vec3 = glm::vec3(0.0, 1.0, 0.0);
     let camera_up: Vec3 = glm::vec3(0.0, 1.0, 0.0);
 
     // create a camera
@@ -62,7 +62,7 @@ fn main() {
         camera_origin,
         camera_lookat,
         camera_up,
-        45.0,
+        20.0,
         IMAGE_WIDTH as f32 / IMAGE_HEIGHT as f32,
     );
     let camera: &dyn Camera = match CAMERA_TYPE {
@@ -76,29 +76,7 @@ fn main() {
         }
     };
 
-    // create world and populate it with objects
-    let x_extent = 90.0;
-    let y_extent = 50.0;
-    let z_close = -125.0;
-    let z_far = z_close - 30.0;
-    let num_spheres = 100_000;
-    let mut world = HittableList::new();
-    for _ in 0..num_spheres {
-        world.add(Box::new(Sphere {
-            center: glm::vec3(
-                2.0 * x_extent * rng().gen::<f32>() - x_extent,
-                2.0 * y_extent * rng().gen::<f32>() - y_extent,
-                (z_far - z_close) * rng().gen::<f32>() + z_close,
-            ),
-            radius: 1.0,
-            material: Box::new(Lambertian {
-                albedo: glm::vec3(rng().gen::<f32>(), rng().gen::<f32>(), rng().gen::<f32>()),
-            }),
-        }));
-    }
-
-    println!("building bvh . . .");
-    let bvh = BVH::build(world.objects, 20);
+    let mesh = Mesh::create("assets/teapot.obj", color(158, 2, 0), 64);
 
     // create light source vector
     let point_light1 = Light {
@@ -143,7 +121,7 @@ fn main() {
                 let u = (x_float + jitter_boxes[j][i].0) / image_width;
                 let v = (y_float + jitter_boxes[j][i].1) / image_height;
                 let r = camera.get_ray(u, v);
-                pixel_color += ray_color(&r, &bvh, &lights);
+                pixel_color += ray_color(&r, &mesh, &lights);
             }
         }
         *pixel = vec3_to_rgb(pixel_color);

@@ -67,7 +67,7 @@ impl AABB {
     ///
     /// # Returns
     /// - A new box which bounds all of the space of the given boxes.
-    pub fn surrounding_box(first: AABB, second: AABB) -> AABB {
+    pub fn surrounding_box(first: &AABB, second: &AABB) -> AABB {
         AABB {
             minimum_point: glm::vec3(
                 first.minimum_point.x.min(second.minimum_point.x),
