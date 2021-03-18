@@ -1,11 +1,14 @@
 # Ray Tracer for CS 419
 
+![Teapot](assets/teapot2.png)
 ![Animated Sample](assets/animation.gif)
 ![Animated Sample](assets/animation2.gif)
 
 ## Project
 
 This is a basic ray tracer for production computer graphics (CS 419) at UIUC. It implements intersection of rays with spheres, planes, and triangles. The camera is movable and can use either orthographic or perspective projections. Please explore the code and play with it; all configuration of the objects, lights, and cameras is done in the main file.
+
+Importing meshes from OBJ files is supported, and geometric primitives can be organized in a BVH as an acceleration structure.
 
 ## Installation and Usage
 
