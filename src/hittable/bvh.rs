@@ -25,15 +25,15 @@ impl Hittable for BVH {
     /// # Returns
     /// - Optional `HitRecord` if there was a hit, otherwise `None`.
     fn hit(&self, ray: &Ray, min_distance: f32, max_distance: f32) -> Option<HitRecord> {
-        if let Some(_hit) = self.bounding_box.hit(ray, min_distance, max_distance) {
-            if let Some(hit_left) = (*self.left).hit(ray, min_distance, max_distance) {
-                if let Some(hit_right) = (*self.right).hit(ray, min_distance, hit_left.distance) {
+        if let Some(_hit) = &self.bounding_box.hit(&ray, min_distance, max_distance) {
+            if let Some(hit_left) = (*self.left).hit(&ray, min_distance, max_distance) {
+                if let Some(hit_right) = (*self.right).hit(&ray, min_distance, hit_left.distance) {
                     Some(hit_right)
                 } else {
                     Some(hit_left)
                 }
             } else {
-                (*self.right).hit(ray, min_distance, max_distance)
+                (*self.right).hit(&ray, min_distance, max_distance)
             }
         } else {
             None

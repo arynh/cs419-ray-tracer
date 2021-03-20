@@ -78,7 +78,7 @@ impl Hittable for HittableList {
         let mut closest_hit: Option<HitRecord> = None;
 
         for object in self.objects.iter() {
-            if let Some(hit) = object.hit(ray, min_distance, max_distance) {
+            if let Some(hit) = object.hit(&ray, min_distance, max_distance) {
                 if hit.distance < current_min {
                     current_min = hit.distance;
                     closest_hit = Some(hit);

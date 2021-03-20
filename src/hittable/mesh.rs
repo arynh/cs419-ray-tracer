@@ -3,12 +3,13 @@ use crate::hittable::aabb::AABB;
 use crate::hittable::bvh::BVH;
 use crate::hittable::triangle::Triangle;
 use crate::hittable::Hittable;
+use crate::hittable_list::HittableList;
 use crate::material::lambertian::Lambertian;
 use crate::ray::Ray;
 use glm::Vec3;
 
 pub struct Mesh {
-    bvh: BVH,
+    triangles: Box<dyn Hittable>,
 }
 
 impl Hittable for Mesh {
@@ -25,12 +26,12 @@ impl Hittable for Mesh {
     /// # Returns
     /// - Optional `HitRecord` if there was a hit, otherwise `None`.
     fn hit(&self, ray: &Ray, min_distance: f32, max_distance: f32) -> Option<HitRecord> {
-        self.bvh.hit(ray, min_distance, max_distance)
+        (*self.triangles).hit(&ray, min_distance, max_distance)
     }
 
     /// Compute the bounding box of this mesh.
     fn bounding_box(&self) -> Option<AABB> {
-        self.bvh.bounding_box()
+        (*self.triangles).bounding_box()
     }
 }
 
@@ -105,6 +106,7 @@ impl Mesh {
         for (index, triangle) in triangles.iter().enumerate() {
             hittables.push(Box::new(Triangle {
                 vertices: *triangle,
+                edges: [&triangle[1] - &triangle[0], &triangle[2] - &triangle[0]],
                 vertex_normals: [
                     glm::normalize(&normals[indices[index * 3]]),
                     glm::normalize(&normals[indices[index * 3 + 1]]),
@@ -115,7 +117,7 @@ impl Mesh {
         }
 
         Mesh {
-            bvh: BVH::build(hittables, bvh_leaf_max),
+            triangles: Box::new(BVH::build(hittables, bvh_leaf_max)),
         }
     }
 }

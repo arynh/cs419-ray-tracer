@@ -111,7 +111,6 @@ impl Camera for PerspectiveCamera {
             direction: glm::normalize(
                 &(self.lower_left_corner + u * self.horizontal + v * self.vertical - self.origin),
             ),
-            attenuation: glm::vec3(0.0, 0.0, 0.0),
         }
     }
 

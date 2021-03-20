@@ -7,8 +7,6 @@ pub struct Ray {
     pub origin: Vec3,
     /// direction along with the ray point, not guaranteed to be normalized
     pub direction: Vec3,
-    /// color seen along this ray
-    pub attenuation: Vec3,
 }
 
 /// Methods for the ray struct
@@ -22,6 +20,6 @@ impl Ray {
     /// # Returns
     /// - `Vec3` - Point at t distance along the ray
     pub fn at(&self, t: f32) -> Vec3 {
-        self.origin + t * glm::normalize(&self.direction)
+        &self.origin + t * glm::normalize(&self.direction)
     }
 }

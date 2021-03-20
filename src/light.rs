@@ -28,27 +28,22 @@ impl Light {
         let point_to_light = Ray {
             origin: hit.hit_point,
             direction: glm::normalize(&point_to_light_vector),
-            attenuation: glm::vec3(0.0, 0.0, 0.0),
         };
         // cast a new ray to the light to see if it hits anything
-        if let Some(_shadow_hit) = world.hit(&point_to_light, EPSILON, MAX_HIT_DISTANCE) {
+        if let Some(_shadow_hit) = &world.hit(&point_to_light, EPSILON, MAX_HIT_DISTANCE) {
             // shadow => no diffuse or specular components
             glm::vec3(0.0, 0.0, 0.0)
         } else {
-            if let Some(material) = hit.material {
-                let material_color = material.color();
-                let normal_vector = hit.normal();
-                let diffuse_light_weighting =
-                    glm::normalize_dot(&point_to_light.direction, &normal_vector).max(0.0);
-                let halfway_vector = point_to_light.direction - hit.ray.direction;
-                let specular_light_weighting = glm::normalize_dot(&normal_vector, &halfway_vector);
-                material_color * diffuse_light_weighting * DIFFUSE_WEIGHT
-                    + glm::vec3(1.0, 1.0, 1.0)
-                        * specular_light_weighting.powf(SPECULAR_COEFFICIENT)
-                        * SPECULAR_WEIGHT
-            } else {
-                glm::vec3(0.0, 0.0, 0.0)
-            }
+            let material_color = &hit.material.unwrap().color();
+            let normal_vector = &hit.normal();
+            let diffuse_light_weighting =
+                glm::normalize_dot(&point_to_light.direction, &normal_vector).max(0.0);
+            let halfway_vector = &point_to_light.direction - &hit.ray.direction;
+            let specular_light_weighting = glm::normalize_dot(&normal_vector, &halfway_vector);
+            material_color * diffuse_light_weighting * DIFFUSE_WEIGHT
+                + glm::vec3(1.0, 1.0, 1.0)
+                    * specular_light_weighting.powf(SPECULAR_COEFFICIENT)
+                    * SPECULAR_WEIGHT
         }
     }
 }

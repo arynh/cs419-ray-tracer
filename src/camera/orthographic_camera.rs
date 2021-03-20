@@ -112,7 +112,6 @@ impl Camera for OrthographicCamera {
                 &(self.lower_left_corner + u * self.horizontal + v * self.vertical),
             ),
             direction: self.orthogonal_direction,
-            attenuation: glm::vec3(0.0, 0.0, 0.0),
         }
     }
 
