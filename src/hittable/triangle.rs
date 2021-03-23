@@ -2,7 +2,7 @@ use super::super::EPSILON;
 use crate::hit_record::HitRecord;
 use crate::hittable::aabb::AABB;
 use crate::hittable::Hittable;
-use crate::material::Material;
+use crate::material::MaterialType;
 use crate::ray::Ray;
 use glm::Vec3;
 
@@ -15,7 +15,7 @@ pub struct Triangle {
     /// Normals at each vertex
     pub vertex_normals: [Vec3; 3],
     /// Material of the triangle
-    pub material: Box<dyn Material>,
+    pub material: MaterialType,
 }
 
 /// Methods from the hittable trait
@@ -62,7 +62,7 @@ impl Hittable for Triangle {
                             ray: *ray,
                             distance: t,
                             outward_normal: self.interpolate_normal(ray.at(t)),
-                            material: Some(&(*self.material)),
+                            material: Some(&self.material),
                         })
                     } else {
                         None

@@ -1,4 +1,4 @@
-use crate::material::Material;
+use crate::material::MaterialType;
 use crate::ray::Ray;
 use glm::Vec3;
 
@@ -13,7 +13,7 @@ pub struct HitRecord<'a> {
     /// Normal vector of the geometry hit by the ray
     pub outward_normal: Vec3,
     /// Material hit
-    pub material: Option<&'a dyn Material>,
+    pub material: Option<&'a MaterialType>,
 }
 
 impl<'a> HitRecord<'a> {

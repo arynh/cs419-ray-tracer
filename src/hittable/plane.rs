@@ -1,7 +1,7 @@
 use crate::hit_record::HitRecord;
 use crate::hittable::aabb::AABB;
 use crate::hittable::Hittable;
-use crate::material::Material;
+use crate::material::MaterialType;
 use crate::ray::Ray;
 use glm::Vec3;
 
@@ -12,7 +12,7 @@ pub struct Plane {
     /// normal vector of the plane from the center point
     pub normal: Vec3,
     /// material of the plane
-    pub material: Box<dyn Material>,
+    pub material: MaterialType,
 }
 
 /// Methods for the hittable trait
@@ -37,7 +37,7 @@ impl Hittable for Plane {
                     ray: *ray,
                     distance: t,
                     outward_normal: self.normal,
-                    material: Some(&(*self.material)),
+                    material: Some(&self.material),
                 })
             } else {
                 None

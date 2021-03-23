@@ -9,21 +9,17 @@ mod light;
 mod material;
 mod ray;
 
-use camera::orthographic_camera::OrthographicCamera;
 use camera::perspective_camera::PerspectiveCamera;
 use camera::Camera;
 use glm::Vec3;
-use hittable::bvh::BVH;
 use hittable::mesh::Mesh;
-use hittable::sphere::Sphere;
-use hittable::triangle::Triangle;
 use hittable::Hittable;
-use hittable_list::HittableList;
 use light::Light;
-use material::lambertian::Lambertian;
+use material::Material;
 use rand::prelude::thread_rng as rng;
 use rand::Rng;
 use ray::Ray;
+use rayon::prelude::*;
 
 // Camera projection types used for configuring which camera to use
 enum CameraProjection {
@@ -33,16 +29,15 @@ enum CameraProjection {
 
 // constants for image specifications
 // Change these to change the image!
-const IMAGE_WIDTH: u32 = 500 / 2; // 960 / 4;
-const IMAGE_HEIGHT: u32 = 500 / 2;
-const SAMPLES_LEVEL: usize = 1; // SAMPLES_LEVEL^2 samples per pixel
+const IMAGE_WIDTH: u32 = 500 * 2;
+const IMAGE_HEIGHT: u32 = 500 * 2;
+const SAMPLES_LEVEL: usize = 3; // SAMPLES_LEVEL^2 samples per pixel
 const EPSILON: f32 = 0.000008;
 const MAX_HIT_DISTANCE: f32 = f32::INFINITY;
 const AMBIENT_WEIGHT: f32 = 0.05;
 const DIFFUSE_WEIGHT: f32 = 0.8;
 const SPECULAR_WEIGHT: f32 = 0.5;
 const SPECULAR_COEFFICIENT: f32 = 120.0;
-const CAMERA_TYPE: CameraProjection = CameraProjection::Perspective;
 
 fn main() {
     // configure camera position
@@ -51,26 +46,14 @@ fn main() {
     let camera_up: Vec3 = glm::vec3(0.0, 1.0, 0.0);
 
     // create a camera
-    let ortho = &OrthographicCamera::new(
+    let camera = PerspectiveCamera::new(
         camera_origin,
         camera_lookat,
         camera_up,
-        45.0,
+        20.0,
         IMAGE_WIDTH as f32 / IMAGE_HEIGHT as f32,
     );
-    let perspective = &PerspectiveCamera::new(
-        camera_origin,
-        camera_lookat,
-        camera_up,
-        18.0,
-        IMAGE_WIDTH as f32 / IMAGE_HEIGHT as f32,
-    );
-    let camera: &dyn Camera = match CAMERA_TYPE {
-        CameraProjection::Orthographic => ortho,
-        CameraProjection::Perspective => perspective,
-    };
 
-    // let mesh = Mesh::create("assets/cow.obj", color(100, 200, 100), 22);
     let mesh = Mesh::create("assets/dragon.obj", color(158, 2, 0), 32);
 
     // create light source vector
@@ -80,47 +63,55 @@ fn main() {
     };
     let lights = vec![point_light1];
 
-    // convert from vector to adjusted and clamped RBG values
-    let vec3_to_rgb = |vec: &Vec3| {
-        let scaled = vec / (SAMPLES_LEVEL * SAMPLES_LEVEL) as f32;
-        let clamped = glm::clamp(&scaled, 0.0, 1.0);
-        let converted = clamped * 255.0;
-        image::Rgb([converted.x as u8, converted.y as u8, converted.z as u8])
-    };
-
-    // preallocate an array for the multi-jittered sampling
-    let mut jitter_boxes: [[[f32; 2]; SAMPLES_LEVEL]; SAMPLES_LEVEL] =
-        [[[0.0; 2]; SAMPLES_LEVEL]; SAMPLES_LEVEL];
-    // initialize the canonical arrangement for multi-jittered sampling
-    for j in 0..SAMPLES_LEVEL {
-        for i in 0..SAMPLES_LEVEL {
-            let j_float = j as f32;
-            let i_float = i as f32;
-            let n_float = SAMPLES_LEVEL as f32;
-            jitter_boxes[j][i][0] = (i_float + (j_float + rng().gen::<f32>()) / n_float) / n_float;
-            jitter_boxes[j][i][1] = (j_float + (i_float + rng().gen::<f32>()) / n_float) / n_float;
+    let mut pixel_coordinates: Vec<(u32, u32)> = Vec::new();
+    for x in (0..IMAGE_WIDTH).rev() {
+        for y in (0..IMAGE_HEIGHT).rev() {
+            pixel_coordinates.push((x, y));
         }
     }
-    println!("tracing rays . . .");
 
-    let mut img = image::RgbImage::new(IMAGE_WIDTH, IMAGE_HEIGHT);
-    let image_width = IMAGE_WIDTH as f32 - 1.0;
-    let image_height = IMAGE_HEIGHT as f32 - 1.0;
-    let mut pixel_color: Vec3;
-    for (x, y, pixel) in img.enumerate_pixels_mut() {
-        pixel_color = glm::vec3(0.0, 0.0, 0.0);
-        let jitter_boxes = shuffle_jittered_sampling(&mut jitter_boxes);
-        let x_float = x as f32;
-        let y_float = image_height - y as f32;
-        for j in 0..SAMPLES_LEVEL {
-            for i in 0..SAMPLES_LEVEL {
-                let u = (x_float + jitter_boxes[j][i][0]) / image_width;
-                let v = (y_float + jitter_boxes[j][i][1]) / image_height;
-                let r = camera.get_ray(u, v);
-                pixel_color += ray_color(&r, &mesh, &lights);
+    println!("tracing rays . . .");
+    let pixels: Vec<((u32, u32), Vec3)> = pixel_coordinates
+        .par_iter()
+        .map(|(x, y)| {
+            // preallocate an array for the multi-jittered sampling
+            let mut jitter_boxes: [[(f32, f32); SAMPLES_LEVEL]; SAMPLES_LEVEL] =
+                [[(0.0, 0.0); SAMPLES_LEVEL]; SAMPLES_LEVEL];
+            // initialize the canonical arrangement for multi-jittered sampling
+            for j in 0..SAMPLES_LEVEL {
+                for i in 0..SAMPLES_LEVEL {
+                    let j_float = j as f32;
+                    let i_float = i as f32;
+                    let n_float = SAMPLES_LEVEL as f32;
+                    jitter_boxes[j][i].0 =
+                        (i_float + (j_float + rng().gen::<f32>()) / n_float) / n_float;
+                    jitter_boxes[j][i].1 =
+                        (j_float + (i_float + rng().gen::<f32>()) / n_float) / n_float;
+                }
             }
-        }
-        *pixel = vec3_to_rgb(&pixel_color);
+
+            let image_width = IMAGE_WIDTH as f32 - 1.0;
+            let image_height = IMAGE_HEIGHT as f32 - 1.0;
+            let mut pixel_color = glm::vec3(0.0, 0.0, 0.0);
+            let jitter_boxes = shuffle_jittered_sampling(&mut jitter_boxes);
+            let x_float = *x as f32;
+            let y_float = image_height - *y as f32;
+            for j in 0..SAMPLES_LEVEL {
+                for i in 0..SAMPLES_LEVEL {
+                    let u = (x_float + jitter_boxes[j][i].0) / image_width;
+                    let v = (y_float + jitter_boxes[j][i].1) / image_height;
+                    let r = camera.get_ray(u, v);
+                    pixel_color += ray_color(&r, &mesh, &lights);
+                }
+            }
+            ((*x, *y), pixel_color)
+        })
+        .collect();
+
+    // convert pixel colors into 8 bit RGB pixels and place them in an image buffer
+    let mut img = image::RgbImage::new(IMAGE_WIDTH, IMAGE_HEIGHT);
+    for pixel in pixels.iter() {
+        img.put_pixel(pixel.0 .0, pixel.0 .1, vec3_to_rgb(&pixel.1));
     }
     img.save("out.png").unwrap();
 }
@@ -134,7 +125,7 @@ fn main() {
 ///
 /// # Returns
 /// - `Vec3` - the color that this ray contributes to the pixel
-fn ray_color(ray: &Ray, world: &dyn Hittable, lights: &Vec<Light>) -> Vec3 {
+fn ray_color(ray: &Ray, world: &dyn Hittable, lights: &[Light]) -> Vec3 {
     match world.hit(&ray, EPSILON, MAX_HIT_DISTANCE) {
         // if we hit something, get that object's color, shade with blinn-phong
         Some(hit) => {
@@ -167,27 +158,38 @@ fn ray_color(ray: &Ray, world: &dyn Hittable, lights: &Vec<Light>) -> Vec3 {
 /// - `&[[[f32; 2]; SAMPLES_LEVEL]; SAMPLES_LEVEL]` - the reference to the
 ///     sample locations to return ownership to the main loop
 fn shuffle_jittered_sampling(
-    jitter_boxes: &mut [[[f32; 2]; SAMPLES_LEVEL]; SAMPLES_LEVEL],
-) -> &[[[f32; 2]; SAMPLES_LEVEL]; SAMPLES_LEVEL] {
+    jitter_boxes: &mut [[(f32, f32); SAMPLES_LEVEL]; SAMPLES_LEVEL],
+) -> &[[(f32, f32); SAMPLES_LEVEL]; SAMPLES_LEVEL] {
     for j in 0..SAMPLES_LEVEL {
         for i in 0..SAMPLES_LEVEL {
             let k: usize = ((j as f32 + rng().gen::<f32>() * (SAMPLES_LEVEL - j) as f32) as usize)
                 .min(SAMPLES_LEVEL - 1);
-            let temp = jitter_boxes[j][i][0];
-            jitter_boxes[j][i][0] = jitter_boxes[k][i][0];
-            jitter_boxes[k][i][0] = temp;
+            let temp = jitter_boxes[j][i].0;
+            jitter_boxes[j][i].0 = jitter_boxes[k][i].0;
+            jitter_boxes[k][i].0 = temp;
         }
     }
     for i in 0..SAMPLES_LEVEL {
         for j in 0..SAMPLES_LEVEL {
             let k: usize = ((i as f32 + rng().gen::<f32>() * (SAMPLES_LEVEL - i) as f32) as usize)
                 .min(SAMPLES_LEVEL - 1);
-            let temp = jitter_boxes[j][i][1];
-            jitter_boxes[j][i][1] = jitter_boxes[j][k][1];
-            jitter_boxes[j][k][0] = temp;
+            let temp = jitter_boxes[j][i].1;
+            jitter_boxes[j][i].1 = jitter_boxes[j][k].1;
+            jitter_boxes[j][k].0 = temp;
         }
     }
     jitter_boxes
+}
+
+/// Convert from vector to adjusted and clamped RBG values.
+///
+/// # Arguments
+/// - `vec: &Vec3` - Vec3 to convert to a RGB pixel
+fn vec3_to_rgb(vec: &Vec3) -> image::Rgb<u8> {
+    let scaled = vec / (SAMPLES_LEVEL * SAMPLES_LEVEL) as f32;
+    let clamped = glm::clamp(&scaled, 0.0, 1.0);
+    let converted = clamped * 255.0;
+    image::Rgb([converted.x as u8, converted.y as u8, converted.z as u8])
 }
 
 /// Utility to convert from 8 bit RGB values to a Vec3

@@ -5,6 +5,7 @@ use super::SPECULAR_COEFFICIENT;
 use super::SPECULAR_WEIGHT;
 use crate::hit_record::HitRecord;
 use crate::hittable::Hittable;
+use crate::material::Material;
 use crate::ray::Ray;
 use glm::Vec3;
 

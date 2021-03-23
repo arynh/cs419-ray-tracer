@@ -4,6 +4,7 @@ use crate::hittable::bvh::BVH;
 use crate::hittable::triangle::Triangle;
 use crate::hittable::Hittable;
 use crate::material::lambertian::Lambertian;
+use crate::material::MaterialType;
 use crate::ray::Ray;
 use glm::Vec3;
 
@@ -111,7 +112,7 @@ impl Mesh {
                     glm::normalize(&normals[indices[index * 3 + 1]]),
                     glm::normalize(&normals[indices[index * 3 + 2]]),
                 ],
-                material: Box::new(Lambertian { albedo: base_color }),
+                material: MaterialType::Lambertian(Lambertian { albedo: base_color }),
             });
         }
 
