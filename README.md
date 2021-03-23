@@ -1,10 +1,6 @@
 # Ray Tracer for CS 419
 
-![Dragon](assets/dragon.png)
-![Teapot](assets/teapot2.png)
-![Cow](assets/cow3.png)
-![Animated Sample](assets/animation.gif)
-![Animated Sample](assets/animation2.gif)
+![Dragon](assets/dragon.gif)
 
 ## Project
 
@@ -33,6 +29,14 @@ We can also see here that this ray tracer allows for any number of light sources
 Both spheres appear perfectly circular, and the ground plane is invisible, as it is parallel to the camera's view direction.
 
 ![Orthographic Sample](assets/orthographic_camera.png)
+
+## More Samples
+
+![Dragon](assets/dragon.png)
+![Cow](assets/cow3.png)
+![Animated Sample](assets/animation.gif)
+![Animated Sample](assets/animation2.gif)
+![Teapot](assets/teapot2.png)
 
 ## References
 
