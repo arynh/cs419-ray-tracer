@@ -1,16 +1,48 @@
 use crate::hit_record::HitRecord;
 use crate::hittable::aabb::AABB;
+use crate::hittable::triangle::Triangle;
+use crate::hittable::triangle::TriangleList;
 use crate::hittable::Hittable;
-use crate::hittable_list::HittableList;
 use crate::ray::Ray;
+
+pub enum BVHNode {
+    BVH(Box<BVH>),
+    HittableList(Box<TriangleList>),
+}
 
 pub struct BVH {
     /// Left subtree
-    pub left: Box<dyn Hittable>,
+    pub left: BVHNode,
     /// Right subtree
-    pub right: Box<dyn Hittable>,
+    pub right: BVHNode,
     /// Bounding box of this (sub)tree
     pub bounding_box: AABB,
+}
+
+impl Hittable for BVHNode {
+    /// Forward the hit call to the appropriate method for each type of BVH node.
+    ///
+    /// # Arguments
+    /// - `ray` the ray to search for intersections along
+    /// - `min_distance` the minimum distance of intersections along the ray
+    /// - `max_distance` the maximum distance of intersections
+    ///
+    /// # Returns
+    /// - Optional `HitRecord` if there was a hit, otherwise `None`.
+    fn hit(&self, ray: &Ray, min_distance: f32, max_distance: f32) -> Option<HitRecord> {
+        match *self {
+            BVHNode::BVH(ref node) => node.hit(&ray, min_distance, max_distance),
+            BVHNode::HittableList(ref node) => node.hit(&ray, min_distance, max_distance),
+        }
+    }
+
+    /// Return the bounding box for this node.
+    fn bounding_box(&self) -> Option<AABB> {
+        match *self {
+            BVHNode::BVH(ref node) => node.bounding_box(),
+            BVHNode::HittableList(ref node) => node.bounding_box(),
+        }
+    }
 }
 
 impl Hittable for BVH {
@@ -26,14 +58,14 @@ impl Hittable for BVH {
     /// - Optional `HitRecord` if there was a hit, otherwise `None`.
     fn hit(&self, ray: &Ray, min_distance: f32, max_distance: f32) -> Option<HitRecord> {
         if let Some(_hit) = &self.bounding_box.hit(&ray, min_distance, max_distance) {
-            if let Some(hit_left) = (*self.left).hit(&ray, min_distance, max_distance) {
-                if let Some(hit_right) = (*self.right).hit(&ray, min_distance, hit_left.distance) {
+            if let Some(hit_left) = self.left.hit(&ray, min_distance, max_distance) {
+                if let Some(hit_right) = self.right.hit(&ray, min_distance, hit_left.distance) {
                     Some(hit_right)
                 } else {
                     Some(hit_left)
                 }
             } else {
-                (*self.right).hit(&ray, min_distance, max_distance)
+                self.right.hit(&ray, min_distance, max_distance)
             }
         } else {
             None
@@ -47,7 +79,7 @@ impl Hittable for BVH {
 }
 
 impl BVH {
-    pub fn build(objects: Vec<Box<dyn Hittable>>, max_at_leaf: usize) -> BVH {
+    pub fn build(objects: Vec<Triangle>, max_at_leaf: usize) -> BVH {
         // compute all bounding boxes and centroids
         let mut bounding_boxes: Vec<AABB> = Vec::new();
         let mut centroids: Vec<glm::Vec3> = Vec::new();
@@ -86,8 +118,8 @@ impl BVH {
         let midpoint = projected_centroids.iter().sum::<f32>() / (projected_centroids.len() as f32);
 
         // partition the objects to the 'left' and 'right' of the midpoint
-        let mut lefts: Vec<Box<dyn Hittable>> = Vec::new();
-        let mut rights: Vec<Box<dyn Hittable>> = Vec::new();
+        let mut lefts: Vec<Triangle> = Vec::new();
+        let mut rights: Vec<Triangle> = Vec::new();
         for obj in objects.into_iter() {
             let mut which = true;
             if let Some(bbox) = obj.bounding_box() {
@@ -100,23 +132,23 @@ impl BVH {
             }
         }
 
-        let left: Box<dyn Hittable>;
+        let left: BVHNode;
         if lefts.len() > max_at_leaf {
-            left = Box::new(BVH::build(lefts, max_at_leaf));
+            left = BVHNode::BVH(Box::new(BVH::build(lefts, max_at_leaf)));
         } else {
-            left = Box::new(HittableList::from_vec(lefts));
+            left = BVHNode::HittableList(Box::new(TriangleList::new(lefts)));
         }
-        let right: Box<dyn Hittable>;
+        let right: BVHNode;
         if rights.len() > max_at_leaf {
-            right = Box::new(BVH::build(rights, max_at_leaf));
+            right = BVHNode::BVH(Box::new(BVH::build(rights, max_at_leaf)));
         } else {
-            right = Box::new(HittableList::from_vec(rights));
+            right = BVHNode::HittableList(Box::new(TriangleList::new(rights)));
         }
 
         BVH {
-            left: left,
-            right: right,
-            bounding_box: bounding_box,
+            left,
+            right,
+            bounding_box,
         }
     }
 }

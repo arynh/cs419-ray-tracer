@@ -38,7 +38,7 @@ impl Light {
             let normal_vector = &hit.normal();
             let diffuse_light_weighting =
                 glm::normalize_dot(&point_to_light.direction, &normal_vector).max(0.0);
-            let halfway_vector = &point_to_light.direction - &hit.ray.direction;
+            let halfway_vector = point_to_light.direction - hit.ray.direction;
             let specular_light_weighting = glm::normalize_dot(&normal_vector, &halfway_vector);
             material_color * diffuse_light_weighting * DIFFUSE_WEIGHT
                 + glm::vec3(1.0, 1.0, 1.0)

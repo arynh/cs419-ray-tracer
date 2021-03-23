@@ -86,10 +86,10 @@ impl PerspectiveCamera {
             );
 
         PerspectiveCamera {
-            origin: origin,
-            horizontal: horizontal,
-            vertical: vertical,
-            lower_left_corner: lower_left_corner,
+            origin,
+            horizontal,
+            vertical,
+            lower_left_corner,
         }
     }
 }

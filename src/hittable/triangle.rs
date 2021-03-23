@@ -113,7 +113,7 @@ impl Triangle {
         let d11 = glm::dot(&edge_two, &edge_two);
         let d20 = glm::dot(&point_to_hit, &edge_one);
         let d21 = glm::dot(&point_to_hit, &edge_two);
-        let denom = d00 * d11 - d01 * d01;
+        let denom = (d00 * d11) - (d01 * d01);
         let v = (d11 * d20 - d01 * d21) / denom;
         let w = (d00 * d21 - d01 * d20) / denom;
         let u = 1.0 - v - w;
@@ -121,5 +121,60 @@ impl Triangle {
         glm::normalize(
             &(u * self.vertex_normals[0] + v * self.vertex_normals[1] + w * self.vertex_normals[2]),
         )
+    }
+}
+
+pub struct TriangleList {
+    triangles: Vec<Triangle>,
+    bounding_box: AABB,
+}
+
+impl TriangleList {
+    pub fn new(triangles: Vec<Triangle>) -> TriangleList {
+        let bounding_box: AABB = triangles
+            .iter()
+            .fold(triangles[0].bounding_box().unwrap(), |bbox, tri| {
+                AABB::surrounding_box(&bbox, &tri.bounding_box().unwrap())
+            });
+        TriangleList {
+            triangles,
+            bounding_box,
+        }
+    }
+}
+
+impl Hittable for TriangleList {
+    /// If a triangle will be hit by a ray in a certain range, return a
+    /// hit record with the intersection information. Otherwise, return `None`.
+    /// This code uses the Möller–Trumbore intersection algorithm, with code
+    /// based on the wikipedia page's implementation.
+    ///
+    /// See `README.md` for the reference to Möller-Trumbore.
+    ///
+    /// # Arguments
+    /// - `ray` the ray to search for intersections along
+    /// - `min_distance` the minimum distance of intersections along the ray
+    /// - `max_distance` the maximum distance of intersections
+    ///
+    /// # Returns
+    /// - Optional `HitRecord` if there was a hit, otherwise `None`.
+    fn hit(&self, ray: &Ray, min_distance: f32, max_distance: f32) -> Option<HitRecord> {
+        let mut current_min = std::f32::INFINITY;
+        let mut closest_hit: Option<HitRecord> = None;
+
+        for object in self.triangles.iter() {
+            if let Some(hit) = object.hit(&ray, min_distance, max_distance) {
+                if hit.distance < current_min {
+                    current_min = hit.distance;
+                    closest_hit = Some(hit);
+                }
+            }
+        }
+        closest_hit
+    }
+
+    /// Get the bounding box for this list of triangles.
+    fn bounding_box(&self) -> Option<AABB> {
+        Some(self.bounding_box)
     }
 }

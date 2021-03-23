@@ -20,6 +20,6 @@ impl Ray {
     /// # Returns
     /// - `Vec3` - Point at t distance along the ray
     pub fn at(&self, t: f32) -> Vec3 {
-        &self.origin + t * glm::normalize(&self.direction)
+        self.origin + t * glm::normalize(&self.direction)
     }
 }

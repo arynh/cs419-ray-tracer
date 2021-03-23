@@ -33,9 +33,9 @@ enum CameraProjection {
 
 // constants for image specifications
 // Change these to change the image!
-const IMAGE_WIDTH: u32 = 500 * 2; // 960 / 4;
-const IMAGE_HEIGHT: u32 = 500 * 2;
-const SAMPLES_LEVEL: usize = 3; // SAMPLES_LEVEL^2 samples per pixel
+const IMAGE_WIDTH: u32 = 500 / 2; // 960 / 4;
+const IMAGE_HEIGHT: u32 = 500 / 2;
+const SAMPLES_LEVEL: usize = 1; // SAMPLES_LEVEL^2 samples per pixel
 const EPSILON: f32 = 0.000008;
 const MAX_HIT_DISTANCE: f32 = f32::INFINITY;
 const AMBIENT_WEIGHT: f32 = 0.05;
@@ -66,14 +66,8 @@ fn main() {
         IMAGE_WIDTH as f32 / IMAGE_HEIGHT as f32,
     );
     let camera: &dyn Camera = match CAMERA_TYPE {
-        CameraProjection::Orthographic => {
-            drop(perspective);
-            ortho
-        }
-        CameraProjection::Perspective => {
-            drop(ortho);
-            perspective
-        }
+        CameraProjection::Orthographic => ortho,
+        CameraProjection::Perspective => perspective,
     };
 
     // let mesh = Mesh::create("assets/cow.obj", color(100, 200, 100), 22);
