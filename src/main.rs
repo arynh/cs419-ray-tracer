@@ -1,4 +1,3 @@
-extern crate image;
 extern crate nalgebra_glm as glm;
 
 mod camera;
@@ -7,20 +6,15 @@ mod hittable;
 mod light;
 mod material;
 mod ray;
+mod scenes;
 
 use camera::perspective_camera::PerspectiveCamera;
 use camera::Camera;
 use glm::Vec3;
-use hittable::hittable_list::HittableList;
-use hittable::mesh::Mesh;
-use hittable::plane::Plane;
-use hittable::sphere::Sphere;
-use hittable::triangle::Triangle;
 use hittable::Hittable;
+use image::RgbImage;
 use light::Light;
-use material::lambertian::Lambertian;
 use material::Material;
-use material::MaterialType;
 use rand::prelude::thread_rng as rng;
 use rand::Rng;
 use ray::Ray;
@@ -36,7 +30,7 @@ enum CameraProjection {
 // Change these to change the image!
 const IMAGE_WIDTH: u32 = 500;
 const IMAGE_HEIGHT: u32 = 500;
-const SAMPLES_LEVEL: usize = 20; // SAMPLES_LEVEL^2 samples per pixel
+const SAMPLES_LEVEL: usize = 10; // SAMPLES_LEVEL^2 samples per pixel
 const DEPTH_LIMIT: usize = 100;
 const EPSILON: f32 = 0.000008;
 const MAX_HIT_DISTANCE: f32 = f32::INFINITY;
@@ -56,17 +50,9 @@ fn main() {
         camera_origin,
         camera_lookat,
         camera_up,
-        25.0,
+        35.0,
         IMAGE_WIDTH as f32 / IMAGE_HEIGHT as f32,
     );
-
-    let mesh = Mesh::create("assets/dragon.obj", color(255, 255, 255), 32);
-
-    // configure object colors
-    let ground_plane_color = color(58, 222, 99);
-    let little_ball_color = color(194, 90, 250);
-    let ground_ball_color = color(242, 78, 190);
-    let triangle_color = color(242, 181, 75);
 
     // create light source vector
     let point_light1 = Light {
@@ -90,39 +76,7 @@ fn main() {
     let pixels: Vec<((u32, u32), Vec3)> = pixel_coordinates
         .par_iter()
         .map(|(x, y)| {
-            // // create world and populate it with objects
-            // let mut world = HittableList::new();
-            // world.add(Box::new(Sphere {
-            //     center: glm::vec3(0.2, 0.4, -1.0),
-            //     radius: 0.4,
-            //     material: MaterialType::Lambertian(Lambertian {
-            //         albedo: little_ball_color,
-            //     }),
-            // }));
-            // world.add(Box::new(Sphere {
-            //     center: glm::vec3(0.0, -5.5, -3.0),
-            //     radius: 5.0,
-            //     material: MaterialType::Lambertian(Lambertian {
-            //         albedo: ground_ball_color,
-            //     }),
-            // }));
-            // world.add(Box::new(Triangle::new(
-            //     [
-            //         glm::vec3(0.5, -0.5, -1.0),
-            //         glm::vec3(-0.5, 1.0, -2.0),
-            //         glm::vec3(-1.5, -0.2, -1.0),
-            //     ],
-            //     MaterialType::Lambertian(Lambertian {
-            //         albedo: triangle_color,
-            //     }),
-            // )));
-            // world.add(Box::new(Plane {
-            //     center: glm::vec3(0.0, -1.0, 0.0),
-            //     normal: glm::vec3(0.0, 1.0, 0.0),
-            //     material: MaterialType::Lambertian(Lambertian {
-            //         albedo: ground_plane_color,
-            //     }),
-            // }));
+            let world = scenes::simple_primitives_scene();
 
             // preallocate an array for the multi-jittered sampling
             let mut jitter_boxes: [[(f32, f32); SAMPLES_LEVEL]; SAMPLES_LEVEL] =
@@ -151,7 +105,7 @@ fn main() {
                     let u = (x_float + jitter_boxes[j][i].0) / image_width;
                     let v = (y_float + jitter_boxes[j][i].1) / image_height;
                     let r = camera.get_ray(u, v);
-                    pixel_color += ray_color(&r, &mesh, &lights, DEPTH_LIMIT);
+                    pixel_color += ray_color(&r, &world, &lights, DEPTH_LIMIT);
                 }
             }
             ((*x, *y), pixel_color)
@@ -159,7 +113,7 @@ fn main() {
         .collect();
 
     // convert pixel colors into 8 bit RGB pixels and place them in an image buffer
-    let mut img = image::RgbImage::new(IMAGE_WIDTH, IMAGE_HEIGHT);
+    let mut img = RgbImage::new(IMAGE_WIDTH, IMAGE_HEIGHT);
     for pixel in pixels.into_iter() {
         img.put_pixel(pixel.0 .0, pixel.0 .1, vec3_to_rgb(&pixel.1));
     }
@@ -188,7 +142,7 @@ fn ray_color<T: Hittable>(ray: &Ray, world: &T, lights: &[Light], depth: usize) 
             }
         } else {
             // if we hit nothing, give the sky's color
-            let t = glm::normalize(&ray.direction).x;
+            let t = ray.direction.x;
             0.5 * color(245, 64, 64) * (1.0 - t) + 1.5 * color(255, 201, 34) * t
         }
     } else {

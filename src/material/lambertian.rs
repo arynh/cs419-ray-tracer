@@ -1,3 +1,4 @@
+use super::super::EPSILON;
 use crate::hit_record::HitRecord;
 use crate::material::Material;
 use crate::ray::Ray;
@@ -41,12 +42,18 @@ impl Material for Lambertian {
     /// # Returns
     /// - optional `Ray`, or none if the ray was absorbed
     fn scatter(&self, _incoming_ray: &Ray, hit_record: &HitRecord) -> Option<Ray> {
-        let scatter_direction = hit_record.normal() + Lambertian::random_direction();
-        Some(Ray {
-            origin: hit_record.hit_point,
-            direction: scatter_direction,
-            attenuation: Some(self.albedo),
-        })
+        let mut scatter_direction = hit_record.normal() + Lambertian::random_direction();
+        if scatter_direction.x.abs() < EPSILON
+            && scatter_direction.y.abs() < EPSILON
+            && scatter_direction.z.abs() < EPSILON
+        {
+            scatter_direction = hit_record.normal()
+        }
+        Some(Ray::new(
+            hit_record.hit_point,
+            scatter_direction,
+            Some(self.albedo),
+        ))
     }
 
     /// Retrieve the base color of the material.

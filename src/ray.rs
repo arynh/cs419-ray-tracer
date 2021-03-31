@@ -5,7 +5,7 @@ use glm::Vec3;
 pub struct Ray {
     /// origin point of the ray
     pub origin: Vec3,
-    /// direction along with the ray point, not guaranteed to be normalized
+    /// direction along with the ray point, normalized
     pub direction: Vec3,
     /// color carried along this ray
     pub attenuation: Option<Vec3>,
@@ -22,6 +22,15 @@ impl Ray {
     /// # Returns
     /// - `Vec3` - Point at t distance along the ray
     pub fn at(&self, t: f32) -> Vec3 {
-        self.origin + t * glm::normalize(&self.direction)
+        self.origin + t * self.direction
+    }
+
+    /// Create a new ray. The direction is normalized in this process.
+    pub fn new(origin: Vec3, direction: Vec3, attenuation: Option<Vec3>) -> Ray {
+        Ray {
+            origin,
+            direction: glm::normalize(&direction),
+            attenuation,
+        }
     }
 }

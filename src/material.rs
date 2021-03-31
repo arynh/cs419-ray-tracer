@@ -1,7 +1,9 @@
 pub mod lambertian;
+pub mod metal;
 
 use crate::hit_record::HitRecord;
 use crate::material::lambertian::Lambertian;
+use crate::material::metal::Metal;
 use crate::ray::Ray;
 use glm::Vec3;
 
@@ -31,6 +33,7 @@ pub trait Material {
 
 pub enum MaterialType {
     Lambertian(Lambertian),
+    Metal(Metal),
 }
 
 impl Material for MaterialType {
@@ -47,6 +50,7 @@ impl Material for MaterialType {
     fn scatter(&self, incoming_ray: &Ray, hit_record: &HitRecord) -> Option<Ray> {
         match *self {
             MaterialType::Lambertian(ref material) => material.scatter(&incoming_ray, &hit_record),
+            MaterialType::Metal(ref material) => material.scatter(&incoming_ray, &hit_record),
         }
     }
 
@@ -60,6 +64,7 @@ impl Material for MaterialType {
     fn color(&self) -> Vec3 {
         match *self {
             MaterialType::Lambertian(ref material) => material.color(),
+            MaterialType::Metal(ref material) => material.color(),
         }
     }
 }

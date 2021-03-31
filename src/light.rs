@@ -26,11 +26,7 @@ impl Light {
     pub fn shade(&self, hit: &HitRecord, world: &dyn Hittable) -> Vec3 {
         // calculate ray from hit point to light source
         let point_to_light_vector = self.position - hit.hit_point;
-        let point_to_light = Ray {
-            origin: hit.hit_point,
-            direction: glm::normalize(&point_to_light_vector),
-            attenuation: None,
-        };
+        let point_to_light = Ray::new(hit.hit_point, point_to_light_vector, None);
         // cast a new ray to the light to see if it hits anything
         if let Some(_shadow_hit) = &world.hit(&point_to_light, EPSILON, MAX_HIT_DISTANCE) {
             // shadow => no diffuse or specular components

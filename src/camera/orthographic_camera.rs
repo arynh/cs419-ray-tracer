@@ -107,13 +107,11 @@ impl Camera for OrthographicCamera {
     /// # Returns
     /// - the new ray to be traced
     fn get_ray(&self, u: f32, v: f32) -> Ray {
-        Ray {
-            origin: glm::normalize(
-                &(self.lower_left_corner + u * self.horizontal + v * self.vertical),
-            ),
-            direction: self.orthogonal_direction,
-            attenuation: None,
-        }
+        Ray::new(
+            self.lower_left_corner + u * self.horizontal + v * self.vertical,
+            self.orthogonal_direction,
+            None,
+        )
     }
 
     /// Move the camera to a new location and change the fov or aspect ratio of

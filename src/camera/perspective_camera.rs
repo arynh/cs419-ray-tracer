@@ -106,13 +106,11 @@ impl Camera for PerspectiveCamera {
     /// # Returns
     /// - the new ray to be traced
     fn get_ray(&self, u: f32, v: f32) -> Ray {
-        Ray {
-            origin: self.origin,
-            direction: glm::normalize(
-                &(self.lower_left_corner + u * self.horizontal + v * self.vertical - self.origin),
-            ),
-            attenuation: None,
-        }
+        Ray::new(
+            self.origin,
+            self.lower_left_corner + u * self.horizontal + v * self.vertical - self.origin,
+            None,
+        )
     }
 
     /// Move the camera to a new location and change the fov or aspect ratio of
