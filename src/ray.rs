@@ -7,6 +7,8 @@ pub struct Ray {
     pub origin: Vec3,
     /// direction along with the ray point, not guaranteed to be normalized
     pub direction: Vec3,
+    /// color carried along this ray
+    pub attenuation: Option<Vec3>,
 }
 
 /// Methods for the ray struct

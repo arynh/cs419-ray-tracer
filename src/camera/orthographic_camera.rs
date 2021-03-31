@@ -112,6 +112,7 @@ impl Camera for OrthographicCamera {
                 &(self.lower_left_corner + u * self.horizontal + v * self.vertical),
             ),
             direction: self.orthogonal_direction,
+            attenuation: None,
         }
     }
 

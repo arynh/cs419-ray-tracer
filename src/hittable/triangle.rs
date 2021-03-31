@@ -94,6 +94,19 @@ impl Hittable for Triangle {
 }
 
 impl Triangle {
+    /// Create a new triangle with vertex normals set to the face normal.
+    pub fn new(vertices: [Vec3; 3], material: MaterialType) -> Triangle {
+        let edge_one = vertices[1] - vertices[0];
+        let edge_two = vertices[2] - vertices[0];
+        let normal = glm::cross(&edge_one, &edge_two);
+        Triangle {
+            vertices,
+            edges: [edge_one, edge_two],
+            vertex_normals: [normal; 3],
+            material,
+        }
+    }
+
     /// Given a hit location, interpolate the vertex normals to get the normal
     /// at the hit point.
     ///

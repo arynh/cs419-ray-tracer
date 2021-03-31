@@ -29,6 +29,7 @@ impl Light {
         let point_to_light = Ray {
             origin: hit.hit_point,
             direction: glm::normalize(&point_to_light_vector),
+            attenuation: None,
         };
         // cast a new ray to the light to see if it hits anything
         if let Some(_shadow_hit) = &world.hit(&point_to_light, EPSILON, MAX_HIT_DISTANCE) {

@@ -45,6 +45,7 @@ impl Material for Lambertian {
         Some(Ray {
             origin: hit_record.hit_point,
             direction: scatter_direction,
+            attenuation: Some(self.albedo),
         })
     }
 

@@ -1,5 +1,6 @@
 pub mod aabb;
 pub mod bvh;
+pub mod hittable_list;
 pub mod mesh;
 pub mod plane;
 pub mod sphere;
