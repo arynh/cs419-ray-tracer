@@ -1,6 +1,7 @@
 extern crate nalgebra_glm as glm;
 
 mod camera;
+mod color;
 mod hit_record;
 mod hittable;
 mod light;
@@ -8,7 +9,6 @@ mod material;
 mod ray;
 mod scenes;
 
-use camera::perspective_camera::PerspectiveCamera;
 use camera::Camera;
 use glm::Vec3;
 use hittable::Hittable;
@@ -28,8 +28,8 @@ enum CameraProjection {
 
 // constants for image specifications
 // Change these to change the image!
-const IMAGE_WIDTH: u32 = 500;
-const IMAGE_HEIGHT: u32 = 500;
+const IMAGE_WIDTH: u32 = 1920;
+const IMAGE_HEIGHT: u32 = 1080;
 const SAMPLES_LEVEL: usize = 10; // SAMPLES_LEVEL^2 samples per pixel
 const DEPTH_LIMIT: usize = 100;
 const EPSILON: f32 = 0.000008;
@@ -40,31 +40,6 @@ const SPECULAR_WEIGHT: f32 = 0.5;
 const SPECULAR_COEFFICIENT: f32 = 120.0;
 
 fn main() {
-    // configure camera position
-    let camera_origin: Vec3 = glm::vec3(-1.0, 0.2, 4.0);
-    let camera_lookat: Vec3 = glm::vec3(0.0, 0.1, 0.0);
-    let camera_up: Vec3 = glm::vec3(0.0, 1.0, 0.0);
-
-    // create a camera
-    let camera = PerspectiveCamera::new(
-        camera_origin,
-        camera_lookat,
-        camera_up,
-        35.0,
-        IMAGE_WIDTH as f32 / IMAGE_HEIGHT as f32,
-    );
-
-    // create light source vector
-    let point_light1 = Light {
-        position: glm::vec3(1.0, 2.0, 1.0),
-        weight: 0.5,
-    };
-    let point_light2 = Light {
-        position: glm::vec3(-1.0, 2.0, 1.0),
-        weight: 0.4,
-    };
-    let lights = vec![point_light1, point_light2];
-
     let mut pixel_coordinates: Vec<(u32, u32)> = Vec::new();
     for x in (0..IMAGE_WIDTH).rev() {
         for y in (0..IMAGE_HEIGHT).rev() {
@@ -76,7 +51,8 @@ fn main() {
     let pixels: Vec<((u32, u32), Vec3)> = pixel_coordinates
         .par_iter()
         .map(|(x, y)| {
-            let world = scenes::simple_primitives_scene();
+            let (world, camera, lights) =
+                scenes::simple_primitives_scene(IMAGE_WIDTH, IMAGE_HEIGHT);
 
             // preallocate an array for the multi-jittered sampling
             let mut jitter_boxes: [[(f32, f32); SAMPLES_LEVEL]; SAMPLES_LEVEL] =
@@ -115,7 +91,11 @@ fn main() {
     // convert pixel colors into 8 bit RGB pixels and place them in an image buffer
     let mut img = RgbImage::new(IMAGE_WIDTH, IMAGE_HEIGHT);
     for pixel in pixels.into_iter() {
-        img.put_pixel(pixel.0 .0, pixel.0 .1, vec3_to_rgb(&pixel.1));
+        img.put_pixel(
+            pixel.0 .0,
+            pixel.0 .1,
+            color::vec3_to_rgb(&pixel.1, SAMPLES_LEVEL),
+        );
     }
     img.save("out.png").unwrap();
 }
@@ -138,15 +118,15 @@ fn ray_color<T: Hittable>(ray: &Ray, world: &T, lights: &[Light], depth: usize) 
                     &ray_color(&scattered_ray, world, &lights, depth - 1),
                 )
             } else {
-                glm::vec3(0.0, 0.0, 0.0)
+                color::color(0, 0, 0)
             }
         } else {
             // if we hit nothing, give the sky's color
             let t = ray.direction.x;
-            0.5 * color(245, 64, 64) * (1.0 - t) + 1.5 * color(255, 201, 34) * t
+            0.5 * color::color(245, 64, 64) * (1.0 - t) + 1.5 * color::color(255, 201, 34) * t
         }
     } else {
-        glm::vec3(0.0, 0.0, 0.0)
+        color::color(0, 0, 0)
     }
 }
 
@@ -184,27 +164,4 @@ fn shuffle_jittered_sampling(
         }
     }
     jitter_boxes
-}
-
-/// Convert from vector to gamma adjusted and clamped RGB values.
-///
-/// # Arguments
-/// - `vec: &Vec3` - Vec3 to convert to a RGB pixel
-fn vec3_to_rgb(vec: &Vec3) -> image::Rgb<u8> {
-    let scaled = vec / (SAMPLES_LEVEL * SAMPLES_LEVEL) as f32;
-    let g = 1.0 / 2.2;
-    let adjusted = glm::pow(&scaled, &glm::vec3(g, g, g));
-    let clamped = glm::clamp(&adjusted, 0.0, 1.0);
-    let converted = clamped * 255.0;
-    image::Rgb([converted.x as u8, converted.y as u8, converted.z as u8])
-}
-
-/// Utility to convert from 8 bit RGB values to a Vec3
-///
-/// # Arguments
-/// - `r: u8` - red value
-/// - `g: u8` - green value
-/// - `b: u8` - blue value
-fn color(r: u8, g: u8, b: u8) -> Vec3 {
-    glm::vec3(r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0)
 }
