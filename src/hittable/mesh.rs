@@ -36,7 +36,7 @@ impl Hittable for Mesh {
 }
 
 impl Mesh {
-    pub fn create(filename: &str, base_color: Vec3, bvh_leaf_max: usize) -> Mesh {
+    pub fn create(filename: &str, material: MaterialType, bvh_leaf_max: usize) -> Mesh {
         // load obj from file, triangulate faces
         let obj = tobj::load_obj(filename, true);
         assert!(obj.is_ok());
@@ -112,7 +112,7 @@ impl Mesh {
                     glm::normalize(&normals[indices[index * 3 + 1]]),
                     glm::normalize(&normals[indices[index * 3 + 2]]),
                 ],
-                material: MaterialType::Lambertian(Lambertian { albedo: base_color }),
+                material,
             });
         }
 

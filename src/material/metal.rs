@@ -1,19 +1,18 @@
-use super::super::EPSILON;
+use super::super::trace_ray;
+use crate::color;
 use crate::hit_record::HitRecord;
+use crate::hittable::Hittable;
+use crate::light::Light;
 use crate::material::Material;
 use crate::ray::Ray;
 use glm::Vec3;
-use rand::prelude::thread_rng as rng;
-use rand::Rng;
 
 /// Represent a metal material with reflection
+#[derive(Clone, Copy)]
 pub struct Metal {
     /// Base albedo of the material
     pub albedo: Vec3,
 }
-
-/// Methods specific to metalic materials
-impl Metal {}
 
 /// Methods for the material trait
 impl Material for Metal {
@@ -27,16 +26,21 @@ impl Material for Metal {
     ///
     /// # Returns
     /// - optional `Ray`, or none if the ray was absorbed
-    fn scatter(&self, incoming_ray: &Ray, hit_record: &HitRecord) -> Option<Ray> {
+    fn shade<T: Hittable>(
+        &self,
+        world: &T,
+        lights: &[Light],
+        incoming_ray: &Ray,
+        hit_record: &HitRecord,
+        depth: u32,
+    ) -> Vec3 {
         let reflected_direction = glm::reflect_vec(&incoming_ray.direction, &hit_record.normal());
         if glm::dot(&reflected_direction, &hit_record.normal()) > 0.0 {
-            Some(Ray::new(
-                hit_record.hit_point,
-                reflected_direction,
-                Some(self.albedo),
-            ))
+            let reflected_ray =
+                Ray::new(hit_record.hit_point, reflected_direction, Some(self.albedo));
+            trace_ray(&reflected_ray, world, lights, depth - 1)
         } else {
-            None
+            color::color(0, 0, 0)
         }
     }
 

@@ -9,12 +9,19 @@ mod material;
 mod ray;
 mod scenes;
 
+use atomic_counter::AtomicCounter;
+use atomic_counter::RelaxedCounter;
 use camera::Camera;
 use glm::Vec3;
+use hittable::mesh::Mesh;
 use hittable::Hittable;
 use image::RgbImage;
+use indicatif::ProgressBar;
 use light::Light;
+use material::lambertian::Lambertian;
+use material::metal::Metal;
 use material::Material;
+use material::MaterialType;
 use rand::prelude::thread_rng as rng;
 use rand::Rng;
 use ray::Ray;
@@ -30,8 +37,8 @@ enum CameraProjection {
 // Change these to change the image!
 const IMAGE_WIDTH: u32 = 1920;
 const IMAGE_HEIGHT: u32 = 1080;
-const SAMPLES_LEVEL: usize = 10; // SAMPLES_LEVEL^2 samples per pixel
-const DEPTH_LIMIT: usize = 100;
+const SAMPLES_LEVEL: usize = 20; // samples per pixel
+const DEPTH_LIMIT: u32 = 20;
 const EPSILON: f32 = 0.000008;
 const MAX_HIT_DISTANCE: f32 = f32::INFINITY;
 const AMBIENT_WEIGHT: f32 = 0.05;
@@ -41,18 +48,23 @@ const SPECULAR_COEFFICIENT: f32 = 120.0;
 
 fn main() {
     let mut pixel_coordinates: Vec<(u32, u32)> = Vec::new();
-    for x in (0..IMAGE_WIDTH).rev() {
-        for y in (0..IMAGE_HEIGHT).rev() {
+    for x in 0..IMAGE_WIDTH {
+        for y in 0..IMAGE_HEIGHT {
             pixel_coordinates.push((x, y));
         }
     }
 
     println!("tracing rays . . .");
+    let counter = RelaxedCounter::new(0);
+    let progress_block_size: usize = 1000;
+    let progress_bar =
+        ProgressBar::new(IMAGE_HEIGHT as u64 * IMAGE_WIDTH as u64 / progress_block_size as u64);
     let pixels: Vec<((u32, u32), Vec3)> = pixel_coordinates
         .par_iter()
         .map(|(x, y)| {
-            let (world, camera, lights) =
-                scenes::simple_primitives_scene(IMAGE_WIDTH, IMAGE_HEIGHT);
+            // FIXME: some types cannot be safely shared across threads, so for
+            // now, I need to recreate the scene for each task
+            let (mesh, camera, lights) = scenes::simple_primitives(IMAGE_WIDTH, IMAGE_HEIGHT);
 
             // preallocate an array for the multi-jittered sampling
             let mut jitter_boxes: [[(f32, f32); SAMPLES_LEVEL]; SAMPLES_LEVEL] =
@@ -81,9 +93,17 @@ fn main() {
                     let u = (x_float + jitter_boxes[j][i].0) / image_width;
                     let v = (y_float + jitter_boxes[j][i].1) / image_height;
                     let r = camera.get_ray(u, v);
-                    pixel_color += ray_color(&r, &world, &lights, DEPTH_LIMIT);
+                    pixel_color += trace_ray(&r, &mesh, &lights, DEPTH_LIMIT);
                 }
             }
+
+            // give a progress update
+            counter.inc();
+            let count = counter.get();
+            if count % progress_block_size == 0 {
+                progress_bar.inc(1);
+            }
+
             ((*x, *y), pixel_color)
         })
         .collect();
@@ -98,6 +118,7 @@ fn main() {
         );
     }
     img.save("out.png").unwrap();
+    println!("done!");
 }
 
 /// Given a ray from the camera, figure out what color that ray sees.
@@ -107,23 +128,22 @@ fn main() {
 /// - `world: &HittableList` - objects that compose our scene
 /// - `lights: &Vec<Light>` - light sources for the scene
 ///
+///
 /// # Returns
 /// - `Vec3` - the color that this ray contributes to the pixel
-fn ray_color<T: Hittable>(ray: &Ray, world: &T, lights: &[Light], depth: usize) -> Vec3 {
+fn trace_ray<T: Hittable>(ray: &Ray, world: &T, lights: &[Light], depth: u32) -> Vec3 {
     if depth > 0 {
         if let Some(hit) = world.hit(&ray, EPSILON, MAX_HIT_DISTANCE) {
-            if let Some(scattered_ray) = &hit.material.unwrap().scatter(&ray, &hit) {
-                glm::matrix_comp_mult(
-                    &(scattered_ray.attenuation.unwrap()),
-                    &ray_color(&scattered_ray, world, &lights, depth - 1),
-                )
+            if let Some(material) = &hit.material {
+                material.shade(world, lights, &hit.ray, &hit, depth)
             } else {
                 color::color(0, 0, 0)
             }
         } else {
+            // color::color(255, 255, 255)
             // if we hit nothing, give the sky's color
             let t = ray.direction.x;
-            0.5 * color::color(245, 64, 64) * (1.0 - t) + 1.5 * color::color(255, 201, 34) * t
+            color::color(245, 64, 64) * (1.0 - t * t) + 1.5 * color::color(255, 255, 255) * t * t
         }
     } else {
         color::color(0, 0, 0)

@@ -1,9 +1,13 @@
 pub mod lambertian;
 pub mod metal;
+pub mod transparent;
 
 use crate::hit_record::HitRecord;
+use crate::hittable::Hittable;
+use crate::light::Light;
 use crate::material::lambertian::Lambertian;
 use crate::material::metal::Metal;
+use crate::material::transparent::Transparent;
 use crate::ray::Ray;
 use glm::Vec3;
 
@@ -19,7 +23,14 @@ pub trait Material {
     ///
     /// # Returns
     /// - optional `Ray`, or none if the ray was absorbed
-    fn scatter(&self, incoming_ray: &Ray, hit_record: &HitRecord) -> Option<Ray>;
+    fn shade<T: Hittable>(
+        &self,
+        world: &T,
+        lights: &[Light],
+        incoming_ray: &Ray,
+        hit_record: &HitRecord,
+        depth: u32,
+    ) -> Vec3;
 
     /// Retrieve the base color of the material.
     ///
@@ -31,9 +42,11 @@ pub trait Material {
     fn color(&self) -> Vec3;
 }
 
+#[derive(Clone, Copy)]
 pub enum MaterialType {
     Lambertian(Lambertian),
     Metal(Metal),
+    Transparent(Transparent),
 }
 
 impl Material for MaterialType {
@@ -47,10 +60,24 @@ impl Material for MaterialType {
     ///
     /// # Returns
     /// - optional `Ray`, or none if the ray was absorbed
-    fn scatter(&self, incoming_ray: &Ray, hit_record: &HitRecord) -> Option<Ray> {
+    fn shade<T: Hittable>(
+        &self,
+        world: &T,
+        lights: &[Light],
+        incoming_ray: &Ray,
+        hit_record: &HitRecord,
+        depth: u32,
+    ) -> Vec3 {
         match *self {
-            MaterialType::Lambertian(ref material) => material.scatter(&incoming_ray, &hit_record),
-            MaterialType::Metal(ref material) => material.scatter(&incoming_ray, &hit_record),
+            MaterialType::Lambertian(ref material) => {
+                material.shade(world, lights, incoming_ray, hit_record, depth)
+            }
+            MaterialType::Metal(ref material) => {
+                material.shade(world, lights, incoming_ray, hit_record, depth)
+            }
+            MaterialType::Transparent(ref material) => {
+                material.shade(world, lights, incoming_ray, hit_record, depth)
+            }
         }
     }
 
@@ -65,6 +92,7 @@ impl Material for MaterialType {
         match *self {
             MaterialType::Lambertian(ref material) => material.color(),
             MaterialType::Metal(ref material) => material.color(),
+            MaterialType::Transparent(ref material) => material.color(),
         }
     }
 }
