@@ -178,9 +178,9 @@ pub fn rectangle_light_example(
 pub fn teapot_caustic(
     image_width: u32,
     image_height: u32,
-) -> (Mesh, PerspectiveCamera, Vec<Light>, Sky) {
+) -> (HittableList, PerspectiveCamera, Vec<Light>, Sky) {
     // configure camera position
-    let camera_origin: Vec3 = glm::vec3(10.0, 10.0, 10.0);
+    let camera_origin: Vec3 = glm::vec3(16.0, 10.0, 10.0);
     let camera_lookat: Vec3 = glm::vec3(0.0, 1.5, 0.0);
     let camera_up: Vec3 = glm::vec3(0.0, 1.0, 0.0);
 
@@ -204,12 +204,24 @@ pub fn teapot_caustic(
         32,
     );
 
+    let mut world = HittableList::new();
+    // teapot
+    world.add(Box::new(mesh));
+    // ground plane
+    world.add(Box::new(Plane {
+        center: glm::vec3(0.0, -12.0, 0.0),
+        normal: glm::vec3(0.0, 1.0, 0.0),
+        material: MaterialType::Lambertian(Lambertian {
+            albedo: color::color(128, 128, 128),
+        }),
+    }));
+
     let sunset_sky_gradient = |ray: &Ray| {
         let t = ray.direction.x;
         0.5 * color::color(245, 64, 64) * (1.0 - t) + 1.5 * color::color(255, 201, 34) * t
     };
 
-    (mesh, camera, Vec::new(), sunset_sky_gradient)
+    (world, camera, Vec::new(), sunset_sky_gradient)
 }
 
 pub fn above_right_dragon(

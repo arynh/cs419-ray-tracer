@@ -44,8 +44,6 @@ fn main() {
             pixel_coordinates.push((x, y));
         }
     }
-    let (mesh, camera, lights, sky) = scenes::teapot_caustic(IMAGE_WIDTH, IMAGE_HEIGHT);
-
     println!("tracing rays . . .");
     let counter = RelaxedCounter::new(0);
     let progress_block_size: usize = 1000;
@@ -56,6 +54,7 @@ fn main() {
         .map(|(x, y)| {
             // FIXME: some types cannot be safely shared across threads, so for
             // now, I need to recreate the scene for each task
+            let (world, camera, lights, sky) = scenes::teapot_caustic(IMAGE_WIDTH, IMAGE_HEIGHT);
 
             // preallocate an array for the multi-jittered sampling
             let mut jitter_boxes: [[(f32, f32); SAMPLES_LEVEL]; SAMPLES_LEVEL] =
@@ -84,7 +83,7 @@ fn main() {
                     let u = (x_float + jitter_boxes[j][i].0) / image_width;
                     let v = (y_float + jitter_boxes[j][i].1) / image_height;
                     let r = camera.get_ray(u, v);
-                    pixel_color += trace_ray(&r, &mesh, &lights, &sky, DEPTH_LIMIT);
+                    pixel_color += trace_ray(&r, &world, &lights, &sky, DEPTH_LIMIT);
                 }
             }
 
