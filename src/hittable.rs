@@ -3,6 +3,7 @@ pub mod bvh;
 pub mod hittable_list;
 pub mod mesh;
 pub mod plane;
+pub mod rectangle;
 pub mod sphere;
 pub mod triangle;
 

@@ -37,24 +37,24 @@ impl Hittable for Triangle {
     fn hit(&self, ray: &Ray, min_distance: f32, max_distance: f32) -> Option<HitRecord> {
         let edge_one = &self.edges[0];
         let edge_two = &self.edges[1];
-        let h = glm::cross(&ray.direction, &edge_two);
-        let a = glm::dot(&edge_one, &h);
-        if a > -EPSILON && a < EPSILON {
+        let perpendicular = glm::cross(&ray.direction, &edge_two);
+        let elevation_angle = glm::dot(&edge_one, &perpendicular);
+        if (-EPSILON..EPSILON).contains(&elevation_angle) {
             None // This ray is parallel to this triangle.
         } else {
-            let f = 1.0 / a;
-            let s = ray.origin - self.vertices[0];
-            let u = f * glm::dot(&s, &h);
-            if u < 0.0 || u > 1.0 {
+            let angle_inv = 1.0 / elevation_angle;
+            let distance = ray.origin - self.vertices[0];
+            let u = angle_inv * glm::dot(&distance, &perpendicular);
+            if !(0.0..=1.0).contains(&u) {
                 None
             } else {
-                let q = glm::cross(&s, &edge_one);
-                let v = f * glm::dot(&ray.direction, &q);
+                let q = glm::cross(&distance, &edge_one);
+                let v = angle_inv * glm::dot(&ray.direction, &q);
                 if v < 0.0 || u + v > 1.0 {
                     None
                 } else {
                     // compute location of intersection
-                    let t = f * glm::dot(&edge_two, &q);
+                    let t = angle_inv * glm::dot(&edge_two, &q);
                     if t > min_distance && t < max_distance {
                         // intersection!
                         Some(HitRecord {
@@ -126,7 +126,7 @@ impl Triangle {
         let d11 = glm::dot(&edge_two, &edge_two);
         let d20 = glm::dot(&point_to_hit, &edge_one);
         let d21 = glm::dot(&point_to_hit, &edge_two);
-        let denom = (d00 * d11) - (d01 * d01);
+        let denom = (d00 * d11) - d01.powi(2);
         let v = (d11 * d20 - d01 * d21) / denom;
         let w = (d00 * d21 - d01 * d20) / denom;
         let u = 1.0 - v - w;

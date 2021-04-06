@@ -1,3 +1,4 @@
+pub mod diffuse_light;
 pub mod lambertian;
 pub mod metal;
 pub mod transparent;
@@ -5,10 +6,12 @@ pub mod transparent;
 use crate::hit_record::HitRecord;
 use crate::hittable::Hittable;
 use crate::light::Light;
+use crate::material::diffuse_light::DiffuseLight;
 use crate::material::lambertian::Lambertian;
 use crate::material::metal::Metal;
 use crate::material::transparent::Transparent;
 use crate::ray::Ray;
+use crate::scenes::Sky;
 use glm::Vec3;
 
 /// Material trait
@@ -27,6 +30,7 @@ pub trait Material {
         &self,
         world: &T,
         lights: &[Light],
+        sky: &Sky,
         incoming_ray: &Ray,
         hit_record: &HitRecord,
         depth: u32,
@@ -40,6 +44,18 @@ pub trait Material {
     /// # Returns
     /// - `Vec3` - the RGB color
     fn color(&self) -> Vec3;
+
+    // /// For emissive materials, they may overload this method to emit light
+    // /// from their surface.
+    // ///
+    // /// # Arguments
+    // /// - self reference
+    // ///
+    // /// # Returns
+    // /// - `Vec3` - color emitted from this surface
+    // fn emitted(&self) -> Vec3 {
+    //     color(0, 0, 0)
+    // }
 }
 
 #[derive(Clone, Copy)]
@@ -47,6 +63,7 @@ pub enum MaterialType {
     Lambertian(Lambertian),
     Metal(Metal),
     Transparent(Transparent),
+    DiffuseLight(DiffuseLight),
 }
 
 impl Material for MaterialType {
@@ -64,19 +81,23 @@ impl Material for MaterialType {
         &self,
         world: &T,
         lights: &[Light],
+        sky: &Sky,
         incoming_ray: &Ray,
         hit_record: &HitRecord,
         depth: u32,
     ) -> Vec3 {
         match *self {
             MaterialType::Lambertian(ref material) => {
-                material.shade(world, lights, incoming_ray, hit_record, depth)
+                material.shade(world, lights, sky, incoming_ray, hit_record, depth)
             }
             MaterialType::Metal(ref material) => {
-                material.shade(world, lights, incoming_ray, hit_record, depth)
+                material.shade(world, lights, sky, incoming_ray, hit_record, depth)
             }
             MaterialType::Transparent(ref material) => {
-                material.shade(world, lights, incoming_ray, hit_record, depth)
+                material.shade(world, lights, sky, incoming_ray, hit_record, depth)
+            }
+            MaterialType::DiffuseLight(ref material) => {
+                material.shade(world, lights, sky, incoming_ray, hit_record, depth)
             }
         }
     }
@@ -93,6 +114,7 @@ impl Material for MaterialType {
             MaterialType::Lambertian(ref material) => material.color(),
             MaterialType::Metal(ref material) => material.color(),
             MaterialType::Transparent(ref material) => material.color(),
+            MaterialType::DiffuseLight(ref material) => material.color(),
         }
     }
 }

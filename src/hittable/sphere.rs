@@ -33,7 +33,7 @@ impl Hittable for Sphere {
         let a = glm::dot(&ray.direction, &ray.direction);
         let half_b = glm::dot(&oc, &ray.direction);
         let c = glm::dot(&oc, &oc) - self.radius * self.radius;
-        let discriminant = (half_b * half_b) - a * c;
+        let discriminant = half_b.powi(2) - a * c;
 
         if discriminant > 0.0 {
             let root = discriminant.sqrt();

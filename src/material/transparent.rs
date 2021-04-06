@@ -1,10 +1,10 @@
 use super::super::trace_ray;
-use crate::color;
 use crate::hit_record::HitRecord;
 use crate::hittable::Hittable;
 use crate::light::Light;
 use crate::material::Material;
 use crate::ray::Ray;
+use crate::scenes::Sky;
 use glm::Vec3;
 
 /// Represent a transparent material with reflection, refraction, and absorption
@@ -35,6 +35,7 @@ impl Material for Transparent {
         &self,
         world: &T,
         lights: &[Light],
+        sky: &Sky,
         incoming_ray: &Ray,
         hit_record: &HitRecord,
         depth: u32,
@@ -44,7 +45,7 @@ impl Material for Transparent {
         let reflected_ray = Ray::new(hit_record.hit_point, reflected_direction, Some(self.albedo));
         let reflectance = self.reflectance * self.albedo
             / glm::dot(&hit_record.outward_normal, &reflected_direction);
-        let reflected_color = trace_ray(&reflected_ray, world, lights, depth - 1);
+        let reflected_color = trace_ray(&reflected_ray, world, lights, sky, depth - 1);
 
         // check for total internal reflection
         if Transparent::total_internal_reflection(hit_record, incoming_ray, self.refractive_index) {
@@ -73,7 +74,7 @@ impl Material for Transparent {
         );
         let transmittance = self.transmittance / (eta * eta) * glm::vec3(1.0, 1.0, 1.0)
             / glm::dot(&hit_record.outward_normal, &transmitted_direction).abs();
-        let transmitted_color = trace_ray(&transmitted_ray, world, lights, depth - 1);
+        let transmitted_color = trace_ray(&transmitted_ray, world, lights, sky, depth - 1);
 
         glm::matrix_comp_mult(&reflectance, &reflected_color)
             * glm::dot(&hit_record.outward_normal, &reflected_direction).abs()

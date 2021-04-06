@@ -5,6 +5,7 @@ use crate::hittable::Hittable;
 use crate::light::Light;
 use crate::material::Material;
 use crate::ray::Ray;
+use crate::scenes::Sky;
 use glm::Vec3;
 
 /// Represent a metal material with reflection
@@ -30,6 +31,7 @@ impl Material for Metal {
         &self,
         world: &T,
         lights: &[Light],
+        sky: &Sky,
         incoming_ray: &Ray,
         hit_record: &HitRecord,
         depth: u32,
@@ -38,7 +40,7 @@ impl Material for Metal {
         if glm::dot(&reflected_direction, &hit_record.normal()) > 0.0 {
             let reflected_ray =
                 Ray::new(hit_record.hit_point, reflected_direction, Some(self.albedo));
-            trace_ray(&reflected_ray, world, lights, depth - 1)
+            trace_ray(&reflected_ray, world, lights, sky, depth - 1)
         } else {
             color::color(0, 0, 0)
         }

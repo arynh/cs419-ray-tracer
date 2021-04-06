@@ -3,7 +3,6 @@ use crate::hittable::aabb::AABB;
 use crate::hittable::bvh::BVH;
 use crate::hittable::triangle::Triangle;
 use crate::hittable::Hittable;
-use crate::material::lambertian::Lambertian;
 use crate::material::MaterialType;
 use crate::ray::Ray;
 use glm::Vec3;

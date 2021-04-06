@@ -5,6 +5,7 @@ use crate::hittable::Hittable;
 use crate::light::Light;
 use crate::material::Material;
 use crate::ray::Ray;
+use crate::scenes::Sky;
 use glm::Vec3;
 use rand::prelude::thread_rng as rng;
 use rand::Rng;
@@ -49,6 +50,7 @@ impl Material for Lambertian {
         &self,
         world: &T,
         lights: &[Light],
+        sky: &Sky,
         _incoming_ray: &Ray,
         hit_record: &HitRecord,
         depth: u32,
@@ -62,7 +64,7 @@ impl Material for Lambertian {
         }
 
         let scattered_ray = Ray::new(hit_record.hit_point, scatter_direction, Some(self.albedo));
-        let scattered_color = trace_ray(&scattered_ray, world, lights, depth - 1);
+        let scattered_color = trace_ray(&scattered_ray, world, lights, sky, depth - 1);
 
         glm::matrix_comp_mult(&self.albedo, &scattered_color)
     }

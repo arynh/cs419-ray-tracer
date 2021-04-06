@@ -1,4 +1,3 @@
-use super::super::EPSILON;
 use crate::camera::Camera;
 use crate::ray::Ray;
 use glm::Vec3;
