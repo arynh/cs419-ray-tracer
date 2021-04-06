@@ -28,8 +28,8 @@ use scenes::Sky;
 // Change these to change the image!
 const IMAGE_WIDTH: u32 = 1920 / 2;
 const IMAGE_HEIGHT: u32 = 1080 / 2;
-const SAMPLES_LEVEL: usize = 50; // samples per pixel
-const DEPTH_LIMIT: u32 = 10;
+const SAMPLES_LEVEL: usize = 4; // samples per pixel
+const DEPTH_LIMIT: u32 = 20;
 const EPSILON: f32 = 0.000008;
 const MAX_HIT_DISTANCE: f32 = f32::INFINITY;
 const AMBIENT_WEIGHT: f32 = 0.05;
@@ -44,6 +44,7 @@ fn main() {
             pixel_coordinates.push((x, y));
         }
     }
+    let (mesh, camera, lights, sky) = scenes::teapot_caustic(IMAGE_WIDTH, IMAGE_HEIGHT);
 
     println!("tracing rays . . .");
     let counter = RelaxedCounter::new(0);
@@ -55,8 +56,6 @@ fn main() {
         .map(|(x, y)| {
             // FIXME: some types cannot be safely shared across threads, so for
             // now, I need to recreate the scene for each task
-            let (mesh, camera, lights, sky) =
-                scenes::rectangle_light_example(IMAGE_WIDTH, IMAGE_HEIGHT);
 
             // preallocate an array for the multi-jittered sampling
             let mut jitter_boxes: [[(f32, f32); SAMPLES_LEVEL]; SAMPLES_LEVEL] =

@@ -125,6 +125,16 @@ pub fn rectangle_light_example(
             albedo: little_ball_color,
         }),
     }));
+    world.add(Box::new(Sphere {
+        center: glm::vec3(4.0, 0.0, -3.0),
+        radius: 0.5,
+        material: MaterialType::Transparent(Transparent {
+            albedo: white,
+            reflectance: 0.1,
+            transmittance: 0.9,
+            refractive_index: 1.3,
+        }),
+    }));
     world.add(Box::new(Plane {
         center: glm::vec3(0.0, -1.0, 0.0),
         normal: glm::vec3(0.0, 1.0, 0.0),
@@ -140,14 +150,12 @@ pub fn rectangle_light_example(
             glm::vec3(5.0, 2.0, -4.0),
             glm::vec3(3.0, 2.0, -4.0),
         ],
-        MaterialType::DiffuseLight(DiffuseLight {
-            color: 10.0 * white,
-        }),
+        MaterialType::DiffuseLight(DiffuseLight { color: 5.0 * white }),
     )));
 
     // configure camera position
-    let camera_origin: Vec3 = glm::vec3(-1.0, 0.2, 4.0);
-    let camera_lookat: Vec3 = glm::vec3(0.0, 0.1, 0.0);
+    let camera_origin: Vec3 = glm::vec3(-1.0, 0.2, 2.0);
+    let camera_lookat: Vec3 = glm::vec3(0.1, 0.3, 0.0);
     let camera_up: Vec3 = glm::vec3(0.0, 1.0, 0.0);
 
     // create a camera
@@ -165,6 +173,43 @@ pub fn rectangle_light_example(
     };
 
     (world, camera, Vec::new(), sunset_sky_gradient)
+}
+
+pub fn teapot_caustic(
+    image_width: u32,
+    image_height: u32,
+) -> (Mesh, PerspectiveCamera, Vec<Light>, Sky) {
+    // configure camera position
+    let camera_origin: Vec3 = glm::vec3(10.0, 10.0, 10.0);
+    let camera_lookat: Vec3 = glm::vec3(0.0, 1.5, 0.0);
+    let camera_up: Vec3 = glm::vec3(0.0, 1.0, 0.0);
+
+    // create a camera
+    let camera = PerspectiveCamera::new(
+        camera_origin,
+        camera_lookat,
+        camera_up,
+        18.0,
+        image_width as f32 / image_height as f32,
+    );
+
+    let mesh = Mesh::create(
+        "assets/teapot.obj",
+        MaterialType::Transparent(Transparent {
+            albedo: color::color(255, 255, 255),
+            reflectance: 0.1,
+            transmittance: 0.9,
+            refractive_index: 1.3,
+        }),
+        32,
+    );
+
+    let sunset_sky_gradient = |ray: &Ray| {
+        let t = ray.direction.x;
+        0.5 * color::color(245, 64, 64) * (1.0 - t) + 1.5 * color::color(255, 201, 34) * t
+    };
+
+    (mesh, camera, Vec::new(), sunset_sky_gradient)
 }
 
 pub fn above_right_dragon(
