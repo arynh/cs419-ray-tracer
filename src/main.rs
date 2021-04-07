@@ -29,7 +29,7 @@ use scenes::Sky;
 const IMAGE_WIDTH: u32 = 1920 / 2;
 const IMAGE_HEIGHT: u32 = 1080 / 2;
 const SAMPLES_LEVEL: usize = 4; // samples per pixel
-const DEPTH_LIMIT: u32 = 20;
+const DEPTH_LIMIT: u32 = 50;
 const EPSILON: f32 = 0.000008;
 const MAX_HIT_DISTANCE: f32 = f32::INFINITY;
 const AMBIENT_WEIGHT: f32 = 0.05;

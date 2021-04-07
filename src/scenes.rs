@@ -27,10 +27,70 @@ pub fn infinite_mirror_hallway(
     image_height: u32,
 ) -> (HittableList, PerspectiveCamera, Vec<Light>, Sky) {
     let ground_plane_color = color::color(58, 222, 99);
-    let little_ball_color = color::color(194, 90, 250);
+    let little_ball_color = color::color(0, 255, 0);
 
     // create world
     let mut world = HittableList::new();
+    // add rectangular mirror on either side
+    world.add(HittableItem::Rectangle(Rectangle::new(
+        [
+            glm::vec3(-2.0, 2.0, 0.0),
+            glm::vec3(-2.0, 2.0, -100.0),
+            glm::vec3(-2.0, 0.0, -100.0),
+            glm::vec3(-2.0, 0.0, 0.0),
+        ],
+        MaterialType::Metal(Metal {
+            albedo: color::color(255, 255, 255),
+        }),
+    )));
+    world.add(HittableItem::Rectangle(Rectangle::new(
+        [
+            glm::vec3(2.0, 2.0, 0.0),
+            glm::vec3(2.0, 2.0, -100.0),
+            glm::vec3(2.0, 0.0, -100.0),
+            glm::vec3(2.0, 0.0, 0.0),
+        ],
+        MaterialType::Metal(Metal {
+            albedo: color::color(255, 255, 255),
+        }),
+    )));
+    // little ball
+    world.add(HittableItem::Sphere(Sphere {
+        center: glm::vec3(0.0, 1.0, -20.0),
+        radius: 0.5,
+        material: MaterialType::Lambertian(Lambertian {
+            albedo: little_ball_color,
+        }),
+    }));
+    // big ball
+    world.add(HittableItem::Sphere(Sphere {
+        center: glm::vec3(0.0, 10.0, -15.0),
+        radius: 5.0,
+        material: MaterialType::Metal(Metal {
+            albedo: color::color(255, 255, 255),
+        }),
+    }));
+
+    // configure camera position
+    let camera_origin: Vec3 = glm::vec3(0.0, 1.0, 1.0);
+    let camera_lookat: Vec3 = glm::vec3(0.0, 1.1, 0.0);
+    let camera_up: Vec3 = glm::vec3(0.0, 1.0, 0.0);
+
+    // create a camera
+    let camera = PerspectiveCamera::new(
+        camera_origin,
+        camera_lookat,
+        camera_up,
+        35.0,
+        image_width as f32 / image_height as f32,
+    );
+
+    let sunset_sky_gradient = |ray: &Ray| {
+        let t = ray.direction.x;
+        0.5 * color::color(245, 64, 64) * (1.0 - t) + 1.5 * color::color(255, 201, 34) * t
+    };
+
+    (world, camera, Vec::new(), sunset_sky_gradient)
 }
 
 /// Simple scene with a ground plane, two spheres, and a triangle.
