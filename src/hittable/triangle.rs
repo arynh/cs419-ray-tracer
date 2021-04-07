@@ -7,6 +7,7 @@ use crate::ray::Ray;
 use glm::Vec3;
 
 /// Represent a triangle in space
+#[derive(Clone, Copy)]
 pub struct Triangle {
     /// Vertices of the triangle
     pub vertices: [Vec3; 3],

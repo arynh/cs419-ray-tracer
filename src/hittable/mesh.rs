@@ -53,10 +53,10 @@ impl Mesh {
 
         // create a triangle for each face
         let triangle_count = indices.len() / 3;
-        println!(
-            "loading {} triangles and building bvh for {} . . . ",
-            triangle_count, filename
-        );
+        // println!(
+        //     "loading {} triangles and building bvh for {} . . . ",
+        //     triangle_count, filename
+        // );
         for tri_index in 0..triangle_count {
             let index_one = tri_index * 3;
             let index_two = tri_index * 3 + 1;

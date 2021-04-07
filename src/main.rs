@@ -44,6 +44,10 @@ fn main() {
             pixel_coordinates.push((x, y));
         }
     }
+
+    // set up scene
+    let (world, camera, lights, sky) = scenes::simple_primitives(IMAGE_WIDTH, IMAGE_HEIGHT);
+
     println!("tracing rays . . .");
     let counter = RelaxedCounter::new(0);
     let progress_block_size: usize = 1000;
@@ -52,10 +56,6 @@ fn main() {
     let pixels: Vec<((u32, u32), Vec3)> = pixel_coordinates
         .par_iter()
         .map(|(x, y)| {
-            // FIXME: some types cannot be safely shared across threads, so for
-            // now, I need to recreate the scene for each task
-            let (world, camera, lights, sky) = scenes::teapot_caustic(IMAGE_WIDTH, IMAGE_HEIGHT);
-
             // preallocate an array for the multi-jittered sampling
             let mut jitter_boxes: [[(f32, f32); SAMPLES_LEVEL]; SAMPLES_LEVEL] =
                 [[(0.0, 0.0); SAMPLES_LEVEL]; SAMPLES_LEVEL];
