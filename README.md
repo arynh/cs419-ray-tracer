@@ -45,3 +45,7 @@ For the basic structure and function of the ray tracer, I follow Peter Shirley's
 To accomplish ray-triangle intersection, I followed the Möller–Trumbore ray-triangle intersection algorithm, with an example implementation on [Wikipedia](https://en.wikipedia.org/wiki/Möller–Trumbore_intersection_algorithm).
 
 My implementation of multi-jittered sampling is adapted from [Correlated Multi-Jittered Sampling](https://graphics.pixar.com/library/MultiJitteredSampling/paper.pdf) by Andrew Kensler of Pixar.
+
+My code implementing refraction and reflection is based on the course notes from CS 419, found at the [course web site](https://illinois-cs419.github.io).
+
+My codebase leverages several libraries for parallelization, vector math, PNG generation, and a fun progress bar; you can find these in [`Cargo.toml`](./Cargo.toml).
