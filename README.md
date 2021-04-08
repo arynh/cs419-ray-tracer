@@ -1,5 +1,6 @@
 # Ray Tracer for CS 419
 
+![Glass Room](assets/colored-glass-final.png)
 ![Dragon](assets/dragon.gif)
 
 ## Project
@@ -32,6 +33,9 @@ Both spheres appear perfectly circular, and the ground plane is invisible, as it
 
 ## More Samples
 
+![Sunset Scene](assets/glass-ball-sunset-final.png)
+![Teapot Caustic](assets/teapot-caustic.png)
+![Mirror Hallway](assets/mirror-hallway-final.png)
 ![Dragon](assets/dragon.png)
 ![Cow](assets/cow3.png)
 ![Animated Sample](assets/animation.gif)

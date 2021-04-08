@@ -21,6 +21,130 @@ use image::Pixel;
 /// A sky takes a &Ray and return the color of the skybox in that ray's
 /// direction.
 pub type Sky = fn(&Ray) -> Vec3;
+pub type SkyBox = fn(&Ray, &image::DynamicImage) -> Vec3;
+
+pub fn colorful_shadows(
+    image_width: u32,
+    image_height: u32,
+) -> (HittableList, PerspectiveCamera, Vec<Light>, Sky) {
+    // configure object colors
+    let white = color::color(255, 255, 255);
+
+    // create world and populate it
+    let mut world = HittableList::new();
+    // ground plane
+    world.add(HittableItem::Plane(Plane {
+        center: glm::vec3(0.0, 0.0, 0.0),
+        normal: glm::vec3(0.0, 1.0, 0.0),
+        material: MaterialType::Lambertian(Lambertian { albedo: white }),
+    }));
+    // back plane
+    world.add(HittableItem::Plane(Plane {
+        center: glm::vec3(0.0, 0.0, -6.001),
+        normal: glm::vec3(0.0, 0.0, 1.0),
+        material: MaterialType::Lambertian(Lambertian { albedo: white }),
+    }));
+    // left plane
+    world.add(HittableItem::Plane(Plane {
+        center: glm::vec3(-4.0, 0.0, 0.0),
+        normal: glm::vec3(1.0, 0.0, 0.0),
+        material: MaterialType::Lambertian(Lambertian { albedo: white }),
+    }));
+    // right plane
+    world.add(HittableItem::Plane(Plane {
+        center: glm::vec3(4.0, 0.0, 0.0),
+        normal: glm::vec3(-1.0, 0.0, 0.0),
+        material: MaterialType::Lambertian(Lambertian { albedo: white }),
+    }));
+    // add an area light
+    world.add(HittableItem::Rectangle(Rectangle::new(
+        [
+            glm::vec3(-1.0, 1.0, -6.0),
+            glm::vec3(1.0, 1.0, -6.0),
+            glm::vec3(1.0, 3.0, -6.0),
+            glm::vec3(-1.0, 3.0, -6.0),
+        ],
+        MaterialType::DiffuseLight(DiffuseLight { color: 8.0 * white }),
+    )));
+    // colored glass objects
+    world.add(HittableItem::Rectangle(Rectangle::new(
+        [
+            glm::vec3(-2.5, 0.0, -1.0),
+            glm::vec3(-1.25, 0.0, -1.0),
+            glm::vec3(-1.25, 1.0, -1.0),
+            glm::vec3(-2.5, 1.0, -1.0),
+        ],
+        MaterialType::Transparent(Transparent {
+            albedo: color::color(0, 255, 255),
+            reflectance: 0.1,
+            transmittance: 0.9,
+            refractive_index: 1.3,
+        }),
+    )));
+    world.add(HittableItem::Rectangle(Rectangle::new(
+        [
+            glm::vec3(-1.75, 0.0, 0.0),
+            glm::vec3(-0.5, 0.0, 0.0),
+            glm::vec3(-0.5, 1.0, 0.0),
+            glm::vec3(-1.75, 1.0, 0.0),
+        ],
+        MaterialType::Transparent(Transparent {
+            albedo: color::color(255, 255, 0),
+            reflectance: 0.1,
+            transmittance: 0.9,
+            refractive_index: 1.3,
+        }),
+    )));
+    world.add(HittableItem::Rectangle(Rectangle::new(
+        [
+            glm::vec3(0.0, 0.0, -1.0),
+            glm::vec3(0.5, 0.0, -1.0),
+            glm::vec3(0.5, 1.0, -1.0),
+            glm::vec3(0.0, 1.0, -1.0),
+        ],
+        MaterialType::Transparent(Transparent {
+            albedo: color::color(255, 50, 255),
+            reflectance: 0.1,
+            transmittance: 0.9,
+            refractive_index: 1.3,
+        }),
+    )));
+    // glass sphere
+    world.add(HittableItem::Sphere(Sphere {
+        center: glm::vec3(-0.25, 0.25, 1.5),
+        radius: 0.25,
+        material: MaterialType::Transparent(Transparent {
+            albedo: white,
+            reflectance: 0.1,
+            transmittance: 0.9,
+            refractive_index: 1.3,
+        }),
+    }));
+    // diffuse sphere
+    world.add(HittableItem::Sphere(Sphere {
+        center: glm::vec3(1.0, 0.25, 1.5),
+        radius: 0.25,
+        material: MaterialType::Lambertian(Lambertian { albedo: white }),
+    }));
+
+    // configure camera position
+    let camera_origin: Vec3 = glm::vec3(0.0, 0.75, 5.0);
+    let camera_lookat: Vec3 = glm::vec3(0.0, 0.5, 0.0);
+    let camera_up: Vec3 = glm::vec3(0.0, 1.0, 0.0);
+
+    // create a camera
+    let camera = PerspectiveCamera::new(
+        camera_origin,
+        camera_lookat,
+        camera_up,
+        35.0,
+        image_width as f32 / image_height as f32,
+    );
+
+    let black_sky = |_ray: &Ray| color::color(0, 0, 0);
+
+    (world, camera, Vec::new(), black_sky)
+}
 
 pub fn infinite_mirror_hallway(
     image_width: u32,

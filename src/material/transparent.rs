@@ -72,7 +72,7 @@ impl Material for Transparent {
             transmitted_direction,
             Some(self.albedo),
         );
-        let transmittance = self.transmittance / (eta * eta) * glm::vec3(1.0, 1.0, 1.0)
+        let transmittance = self.transmittance / (eta * eta) * self.albedo
             / glm::dot(&hit_record.outward_normal, &transmitted_direction).abs();
         let transmitted_color = trace_ray(&transmitted_ray, world, lights, sky, depth - 1);
 

@@ -16,6 +16,7 @@ use glm::Vec3;
 use hittable::Hittable;
 use image::RgbImage;
 use indicatif::ProgressBar;
+use indicatif::ProgressStyle;
 use light::Light;
 use material::Material;
 use rand::prelude::thread_rng as rng;
@@ -28,8 +29,8 @@ use scenes::Sky;
 // Change these to change the image!
 const IMAGE_WIDTH: u32 = 1920 / 2;
 const IMAGE_HEIGHT: u32 = 1080 / 2;
-const SAMPLES_LEVEL: usize = 4; // samples per pixel
-const DEPTH_LIMIT: u32 = 50;
+const SAMPLES_LEVEL: usize = 128; // samples per pixel
+const DEPTH_LIMIT: u32 = 64;
 const EPSILON: f32 = 0.000008;
 const MAX_HIT_DISTANCE: f32 = f32::INFINITY;
 const AMBIENT_WEIGHT: f32 = 0.05;
@@ -46,13 +47,16 @@ fn main() {
     }
 
     // set up scene
-    let (world, camera, lights, sky) = scenes::simple_primitives(IMAGE_WIDTH, IMAGE_HEIGHT);
+    let (world, camera, lights, sky) = scenes::infinite_mirror_hallway(IMAGE_WIDTH, IMAGE_HEIGHT);
 
     println!("tracing rays . . .");
     let counter = RelaxedCounter::new(0);
-    let progress_block_size: usize = 1000;
+    let progress_block_size: usize = 100;
     let progress_bar =
         ProgressBar::new(IMAGE_HEIGHT as u64 * IMAGE_WIDTH as u64 / progress_block_size as u64);
+    progress_bar.set_style(ProgressStyle::default_bar().template(
+        "Elapsed: [{elapsed_precise}]\nRemaining: [{eta_precise}]\n{bar:60.cyan.blue} {pos:}/{len:} {msg}",
+    ));
     let pixels: Vec<((u32, u32), Vec3)> = pixel_coordinates
         .par_iter()
         .map(|(x, y)| {
